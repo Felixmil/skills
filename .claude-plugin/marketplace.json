@@ -8,6 +8,11 @@
       "name": "r-pkg-dev",
       "source": "./r-pkg-dev",
       "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse."
+    },
+    {
+      "name": "dev-crew",
+      "source": "./dev-crew",
+      "description": "A crew of spec-writer, investigator, planner, builder, and reviewer subagents that drive an issue through spec (or investigate, for bugs) -> plan -> build -> QA, plus skills to refine an issue, run the pipeline, debug a bug, update a branch, create a local issue, address a PR, and merge a PR."
     }
   ]
 }
