@@ -1,0 +1,19 @@
+{
+  "name": "r-pkg-dev",
+  "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse. Ships an r-conventions skill (testing, NEWS.md, roxygen, reprex, base-pipe style), a pkgdown-index guardrail hook, an air-format-on-save hook, and the r-btw R session MCP server.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Felix Mil"
+  },
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "r-package",
+    "devtools",
+    "testthat",
+    "roxygen",
+    "pkgdown",
+    "conventions",
+    "guardrails"
+  ]
+}

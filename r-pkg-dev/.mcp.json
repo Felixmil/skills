@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "r-btw": {
+      "command": "Rscript",
+      "args": ["-e", "btw::btw_mcp_server()"]
+    }
+  }
+}

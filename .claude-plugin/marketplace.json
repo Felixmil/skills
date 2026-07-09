@@ -1,0 +1,13 @@
+{
+  "name": "skills",
+  "owner": {
+    "name": "Felix Mil"
+  },
+  "plugins": [
+    {
+      "name": "r-pkg-dev",
+      "source": "./r-pkg-dev",
+      "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse."
+    }
+  ]
+}
