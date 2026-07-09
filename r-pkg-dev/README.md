@@ -14,32 +14,38 @@ A Claude Code plugin that packages R package development conventions, guardrail 
 
 ## Requirements
 
-The **skill and guardrail hooks work with no external setup**; each hook degrades to a silent no-op when its tool is missing, so a partial environment never errors. The individual pieces use:
+The **skill and guardrail hooks work with no external setup**; each hook degrades to a silent no-op when a tool or package it needs is missing, so a partial environment never errors. To get the full value, install the following.
+
+### System tools
 
 - [Air](https://posit-dev.github.io/air/) on `PATH` (or in `~/.local/bin` or `/usr/local/bin`) for the format hook.
-- `Rscript` on `PATH` for the pkgdown-index hook.
+- `Rscript` on `PATH` for the R-based hooks and the MCP server.
 - `jq` for the hook payload parsing.
 
-The **`r-btw` MCP server has additional prerequisites** that a plugin cannot set up for you (see next section). If they are unmet, the server simply fails to connect and the rest of the plugin is unaffected.
+### R packages
+
+```r
+install.packages(c("devtools", "btw"))
+```
+
+- `devtools` provides the development workflow the conventions rely on and, as dependencies, pulls in every other package the plugin uses: `roxygen2` (the roxygen-docs hook), `pkgdown` (the pkgdown-index hook), and `testthat`, `usethis`, `withr`, `rlang`, and `lifecycle` (referenced by the testing, dependency, and lifecycle conventions).
+- `btw` powers the `r-btw` MCP server (development version: `pak::pak("posit-dev/btw")`).
+
+The **`r-btw` MCP server needs one more setup step** that a plugin cannot do for you (see next section). If it is unmet, the server simply fails to connect and the rest of the plugin is unaffected.
 
 ## r-btw MCP setup
 
-The `r-btw` MCP server exposes tools that read your live R session (files, git, package dev, session info). It is declared in `.mcp.json` as `Rscript -e "btw::btw_mcp_server()"` and needs two things that live on your machine, not in the plugin:
+The `r-btw` MCP server exposes tools that read your live R session (files, git, package dev, session info). It is declared in `.mcp.json` as `Rscript -e "btw::btw_mcp_server()"`. Beyond installing `btw` (above), it needs a **session-attach call in your `~/.Rprofile`,** so an interactive R session attaches to the MCP server. Add:
 
-1. **The `btw` R package installed:**
-   ```r
-   install.packages("btw")            # CRAN
-   # or: pak::pak("posit-dev/btw")    # development version
-   ```
-2. **A session-attach call in your `~/.Rprofile`,** so an interactive R session attaches to the MCP server. Add:
-   ```r
-   if (interactive() && requireNamespace("btw", quietly = TRUE)) {
-     try(btw::btw_mcp_session(), silent = TRUE)
-   }
-   ```
-   This fails gracefully when `btw` is absent, so it is safe to keep in a shared `~/.Rprofile`. Restart your R session after adding it.
+```r
+if (interactive() && requireNamespace("btw", quietly = TRUE)) {
+  try(btw::btw_mcp_session(), silent = TRUE)
+}
+```
 
-To check both prerequisites at once, run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
+This fails gracefully when `btw` is absent, so it is safe to keep in a shared `~/.Rprofile`. Restart your R session after adding it.
+
+To check the r-btw prerequisites at once (Rscript, the `btw` package, and the `~/.Rprofile` call), run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
 
 ```
 bash scripts/r-btw-doctor.sh
