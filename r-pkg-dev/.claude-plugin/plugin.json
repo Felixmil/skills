@@ -1,6 +1,6 @@
 {
   "name": "r-pkg-dev",
-  "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse. Ships an r-conventions skill (R code, dependencies, testing, documentation, lifecycle, plus agent-workflow efficiency guidance), guardrail hooks (air-format, R-code anti-patterns, roxygen-docs staleness, pkgdown index), and the r-btw R session MCP server.",
+  "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse. Ships an r-conventions skill (R code, dependencies, testing, documentation, lifecycle, plus agent-workflow efficiency guidance), guardrail hooks (air-format, R-code anti-patterns, roxygen-docs staleness, pkgdown index, and a full-test-suite gate before commit), and the r-btw R session MCP server.",
   "version": "0.1.0",
   "author": {
     "name": "Felix Mil"
