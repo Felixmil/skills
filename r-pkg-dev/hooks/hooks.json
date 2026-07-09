@@ -10,6 +10,16 @@
             "statusMessage": "test suite gate (pre-commit)"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.sh",
+            "statusMessage": "R CMD check gate (pre-push)"
+          }
+        ]
       }
     ],
     "PostToolUse": [

@@ -11,6 +11,7 @@ A Claude Code plugin that packages R package development conventions, guardrail 
   - `check-roxygen-docs` (on edit): after editing an `.R` file with roxygen comments, blocks if `man/` is out of date (via the fast `roxygen2::needs_roxygenize()`), or if a new roxygen file has no `.Rd` yet, so `devtools::document()` is run.
   - `check-pkgdown-index` (on edit / document): after `devtools::document()` or a `_pkgdown.yml` edit, blocks if the pkgdown reference index is out of sync with the package's exports.
   - `check-tests-before-commit` (on `git commit`): runs the full `devtools::test()` suite (with `NOT_CRAN=true`) before a commit and blocks it if any test fails, so red code never enters history. Runs even with `git commit --no-verify`. The tight edit/test loop during development stays targeted; the full suite is paid only at the commit boundary.
+  - `check-rcmd-before-push` (on `git push`): runs `R CMD check` (via `devtools::check()`) before a push and blocks it if the check reports any error, so a broken package does not leave the machine. Warnings and notes are reported but do not block. The check runs only at the push boundary, which is infrequent.
 - **`r-btw` MCP server.** Declared in `.mcp.json` so the running R session tools are available in any project where the plugin is enabled.
 
 ## Requirements
