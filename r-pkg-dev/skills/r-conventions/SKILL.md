@@ -1,6 +1,6 @@
 ---
 name: r-conventions
-description: R package development conventions covering testing, documentation (NEWS.md, roxygen, pkgdown), reprex-in-PR rules, formatting, and code style. Use whenever working in an R package, that is, when editing or creating .R, .Rmd, or .qmd files, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml; when running R tests or R CMD check; or when writing a commit message or pull request for an R package.
+description: R package development conventions covering R code, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. Use whenever working in an R package, that is, when editing or creating .R, .Rmd, or .qmd files, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or when running R tests or R CMD check.
 ---
 
 # R package development conventions
@@ -8,6 +8,13 @@ description: R package development conventions covering testing, documentation (
 These are the conventions to follow in any R package. Apply them whenever the current work touches an R package, not only when explicitly asked.
 
 This plugin also declares the `r-btw` MCP server, which exposes tools that read a live R session. Those tools require the `btw` package and an `~/.Rprofile` setup on the user's machine; if the `mcp__r-btw__*` tools are not available, fall back to running `Rscript`/`R CMD` from the shell, and point the user to this plugin's `scripts/r-btw-doctor.sh` to diagnose the r-btw setup. The conventions below do not depend on the MCP server.
+
+## Agent workflow (work efficiently)
+
+- Prefer the `r-btw` MCP tools over spawning fresh `Rscript` processes: `mcp__r-btw__btw_tool_pkg_load_all`, `mcp__r-btw__btw_tool_pkg_test`, `mcp__r-btw__btw_tool_pkg_document`, `mcp__r-btw__btw_tool_pkg_check`, and the `btw_tool_files_*` / `btw_tool_env_*` tools. They reuse the attached session and avoid paying R startup on every call, so they are much faster. Fall back to `Rscript`/`R CMD` only when the tools are unavailable.
+- To pick up code changes, use `devtools::load_all()` (or `btw_tool_pkg_load_all`); never `R CMD INSTALL` / `install.packages()` the package under development just to test an edit.
+- Work the tight loop: edit, `load_all()`, run the narrowest relevant test (`btw_tool_pkg_test` with a `filter`, or `testthat::test_file()`), and only widen scope once it passes. Reserve the slow full `devtools::check()` (`btw_tool_pkg_check`) for pre-release or when you need CRAN-like validation, not for every change.
+- Run `devtools::document()` (`btw_tool_pkg_document`) after editing roxygen comments or changing `@export`/`@import` tags, before running tests or check, so `man/` and `NAMESPACE` are current. A guardrail hook shipped with this plugin blocks when roxygen docs are stale.
 
 ## General
 
@@ -44,6 +51,8 @@ Some of the rules below are enforced by a guardrail hook shipped with this plugi
 - Store each exported dataset as one `.rda` per object under `data/` (the object name matching the file name), and set `LazyData: true`. Never `@export` a dataset; document the dataset by its name string in `R/` with `@format` and `@source`.
 - Put internal data in a single `R/sysdata.rda` (never documented, never under `data/`).
 - Keep data-generation ("workflow") code in `data-raw/`, listed in `.Rbuildignore`, never below `R/`.
+
+## Code style
 
 - Use the base pipe `|>`, not the magrittr pipe `%>%`.
 - Use `\() ...` for single-line anonymous functions; use `function() {...}` for multi-line ones.
@@ -104,14 +113,3 @@ Some of the rules below are enforced by a guardrail hook shipped with this plugi
 
 - Use a standard open-source `License` field (from R's `license.db`) for CRAN. A full-text `LICENSE.md` copy must be listed in `.Rbuildignore`.
 - When bundling third-party code, preserve its copyright and license headers, add the author with `role = "cph"` in `Authors@R`, and (for CRAN, when the bundled license differs but is compatible) add a `LICENSE.note`. Check license compatibility before bundling (you cannot bundle GPL code into an MIT package).
-
-## Pull request example (reprex)
-
-- When a PR is eligible (see the test below), include a rendered [reprex](https://reprex.tidyverse.org/) in the PR body so the reviewer can see the *impact* at a glance. Generate it with `reprex::reprex()` and paste its Markdown output verbatim; never hand-write the output, it must be the real rendered result.
-- Eligibility test, both conditions must hold:
-  1. The change alters the **observable behaviour of an exported / user-facing function** (new or improved feature, bug fix, changed output or error). This excludes CI/CD, documentation-only changes, pure refactors, and internal-only changes with no user-visible surface; none of these get a reprex.
-  2. The impact **can be shown in one short, self-contained reprex** (a handful of lines, no external state). A tightly-scoped change (one feature, one fix) usually passes; a sprawling change (cross-codebase renames, typo sweeps) usually fails condition 1 or 2 anyway.
-- When a PR clears condition 1 but a faithful reprex is not practical (needs a live database / API / PK-Sim connection, large data, or a long interactive flow), **skip the reprex and add a one-line note** in the `## Example` section saying why (e.g. "Impact not shown as a reprex: requires a live PK-Sim connection."). Never fabricate a contrived example just to satisfy the rule.
-- Show before/after only when there is a meaningful "before": for a **bug fix or changed behaviour**, render the old behaviour and the new behaviour (two reprex blocks, labelled). For a **new feature** there is no "before", show the new usage only.
-- Placement and length: the reprex lives in its own `## Example` section, after the `## <area>` sections and before the issue-closing keywords. If the rendered output is long, wrap it in a `<details><summary>Reprex</summary> ... </details>` block so it does not dominate the description.
-- Console output first. Render a plot (via reprex image upload) only when the change's whole point is the visual output; otherwise keep the example to printed console output.

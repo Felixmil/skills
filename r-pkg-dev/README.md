@@ -4,10 +4,11 @@ A Claude Code plugin that packages R package development conventions, guardrail 
 
 ## What it ships
 
-- **`r-conventions` skill.** The full set of R package conventions (R code, dependencies, `DESCRIPTION`, data, testing, documentation, lifecycle, license, and the reprex-in-PR rules). It triggers automatically when working in an R package (editing `.R`/`.Rmd`/`.qmd`, `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, or `_pkgdown.yml`, or running R tests).
+- **`r-conventions` skill.** The full set of R package conventions (R code, dependencies, `DESCRIPTION`, data, testing, documentation, lifecycle, license) plus agent-workflow guidance for building packages efficiently (prefer the r-btw tools, `load_all()` over reinstall, the tight test loop). It triggers automatically when working in an R package (editing `.R`/`.Rmd`/`.qmd`, `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, or `_pkgdown.yml`, or running R tests).
 - **Guardrail hooks** (`PostToolUse`), all no-ops outside an R package so they are safe everywhere:
   - `air-format`: formats `.R` files with [Air](https://posit-dev.github.io/air/) after each edit.
   - `check-r-code`: blocks common anti-patterns in files below `R/` (`library()`/`require()`/`source()`, cross-package `:::`, `setwd()`, `.First.lib`/`.Last.lib`, writing to `~`) and warns on bare `T`/`F`.
+  - `check-roxygen-docs`: after editing an `.R` file with roxygen comments, blocks if `man/` is out of date (via the fast `roxygen2::needs_roxygenize()`), or if a new roxygen file has no `.Rd` yet, so `devtools::document()` is run.
   - `check-pkgdown-index`: after `devtools::document()` or a `_pkgdown.yml` edit, blocks if the pkgdown reference index is out of sync with the package's exports.
 - **`r-btw` MCP server.** Declared in `.mcp.json` so the running R session tools are available in any project where the plugin is enabled.
 

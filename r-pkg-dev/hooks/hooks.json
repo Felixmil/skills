@@ -22,6 +22,16 @@
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-docs.sh",
+            "statusMessage": "roxygen docs check"
+          }
+        ]
+      },
+      {
         "matcher": "Bash|Edit|Write|MultiEdit|mcp__r-btw__btw_tool_pkg_document",
         "hooks": [
           {
