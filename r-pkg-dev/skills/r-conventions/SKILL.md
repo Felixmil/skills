@@ -62,11 +62,16 @@ Some of the rules below are enforced by a guardrail hook shipped with this plugi
 ## Testing
 
 - Tests must be self-sufficient: all setup inside the `test_that()` block, no shared mutable state between tests.
+- Test files are named `test-*.R` and mirror their `R/` source: `R/foofy.R` pairs with `tests/testthat/test-foofy.R`. Only `helper*`, `setup*`, and `test*` files are auto-run.
+- Do not call `library()` or `source()` in test files; `devtools::load_all()` already attaches testthat and your package namespace. File-scope setup belongs inside the test, in `R/`, or in a `helper*.R`/`setup*.R` file, not as free-floating top-level code.
+- Do not hand-edit `tests/testthat.R`; it is generated boilerplate that only runs under `R CMD check`.
 - Use `withr::local_*()` for any state change in tests (`local_options`, `local_envvar`, `local_tempfile`, `local_tempdir`, `local_dir`). Never bare `options()`, `Sys.setenv()`, or manual cleanup.
 - Fixture paths via `test_path("fixtures", ...)`, never relative paths. Outputs go to `withr::local_tempfile()` / `local_tempdir()`, never the package directory.
 - For errors and warnings, prefer `expect_snapshot(error = TRUE)` (errors) and `expect_snapshot()` (warnings) over `expect_error()` / `expect_warning()`, so the full message text is reviewable.
 - Avoid `expect_true()` / `expect_false()` when a more specific expectation exists (`expect_equal`, `expect_length`, `expect_named`, `expect_s3_class`, etc.); specific expectations give better failure messages.
+- Use `expect_equal()` (not `expect_identical()`) for numeric comparisons, since floating-point results vary by platform. Do not assert on timing or on a specific number of cores.
 - When asserting several parts of the same object (e.g. `object$id`, `object$value`, `object[["x"]]`), prefer `expect_snapshot()` (or `expect_snapshot_value()`) over multiple `expect_equal()` / `expect_identical()` calls on the same object. Applies to any object: list, named vector, S3/S4/R6, data frame, etc.
+- Apply `skip_on_cran()` (and `skip_if_offline()`, `skip_if_not_installed()`) per test, not hoisted to the file top, for long-running, flaky, or network-dependent tests. Keep the whole suite fast (aim for well under a minute).
 - After a code change, escalate test scope progressively. Only broaden scope once the narrower run passes:
   1. Single `test_that()` block: `testthat::test_file("tests/testthat/test-foo.R", desc = "specific description")`
   2. Whole file: `testthat::test_file("tests/testthat/test-foo.R")`.
@@ -99,14 +104,6 @@ Some of the rules below are enforced by a guardrail hook shipped with this plugi
 
 - Use a standard open-source `License` field (from R's `license.db`) for CRAN. A full-text `LICENSE.md` copy must be listed in `.Rbuildignore`.
 - When bundling third-party code, preserve its copyright and license headers, add the author with `role = "cph"` in `Authors@R`, and (for CRAN, when the bundled license differs but is compatible) add a `LICENSE.note`. Check license compatibility before bundling (you cannot bundle GPL code into an MIT package).
-
-## Testing (additional)
-
-- Test files are named `test-*.R` and mirror their `R/` source: `R/foofy.R` pairs with `tests/testthat/test-foofy.R`. Only `helper*`, `setup*`, and `test*` files are auto-run.
-- Do not call `library()` or `source()` in test files; `devtools::load_all()` already attaches testthat and your package namespace. File-scope setup belongs inside the test, in `R/`, or in a `helper*.R`/`setup*.R` file, not as free-floating top-level code.
-- Do not hand-edit `tests/testthat.R`; it is generated boilerplate that only runs under `R CMD check`.
-- Use `expect_equal()` (not `expect_identical()`) for numeric comparisons, since floating-point results vary by platform. Do not assert on timing or on a specific number of cores.
-- Apply `skip_on_cran()` (and `skip_if_offline()`, `skip_if_not_installed()`) per test, not hoisted to the file top, for long-running, flaky, or network-dependent tests. Keep the whole suite fast (aim for well under a minute).
 
 ## Pull request example (reprex)
 
