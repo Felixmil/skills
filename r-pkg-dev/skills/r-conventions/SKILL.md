@@ -7,6 +7,8 @@ description: R package development conventions covering testing, documentation (
 
 These are the conventions to follow in any R package. Apply them whenever the current work touches an R package, not only when explicitly asked.
 
+This plugin also declares the `r-btw` MCP server, which exposes tools that read a live R session. Those tools require the `btw` package and an `~/.Rprofile` setup on the user's machine; if the `mcp__r-btw__*` tools are not available, fall back to running `Rscript`/`R CMD` from the shell, and point the user to this plugin's `scripts/r-btw-doctor.sh` to diagnose the r-btw setup. The conventions below do not depend on the MCP server.
+
 ## General
 
 - Never edit files (or resolve merge conflicts) in `man/` or `NAMESPACE` manually. Regenerate them with `devtools::document()`.

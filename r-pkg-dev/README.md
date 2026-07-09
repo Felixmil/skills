@@ -13,19 +13,46 @@ A Claude Code plugin that packages R package development conventions, guardrail 
 
 ## Requirements
 
+The **skill and guardrail hooks work with no external setup**; each hook degrades to a silent no-op when its tool is missing, so a partial environment never errors. The individual pieces use:
+
 - [Air](https://posit-dev.github.io/air/) on `PATH` (or in `~/.local/bin` or `/usr/local/bin`) for the format hook.
-- `Rscript` on `PATH`, and the `btw` R package installed, for the MCP server and the pkgdown hook.
+- `Rscript` on `PATH` for the pkgdown-index hook.
 - `jq` for the hook payload parsing.
 
-Each hook degrades to a silent no-op when its tool is missing, so a partial setup will not error.
+The **`r-btw` MCP server has additional prerequisites** that a plugin cannot set up for you (see next section). If they are unmet, the server simply fails to connect and the rest of the plugin is unaffected.
+
+## r-btw MCP setup
+
+The `r-btw` MCP server exposes tools that read your live R session (files, git, package dev, session info). It is declared in `.mcp.json` as `Rscript -e "btw::btw_mcp_server()"` and needs two things that live on your machine, not in the plugin:
+
+1. **The `btw` R package installed:**
+   ```r
+   install.packages("btw")            # CRAN
+   # or: pak::pak("posit-dev/btw")    # development version
+   ```
+2. **A session-attach call in your `~/.Rprofile`,** so an interactive R session attaches to the MCP server. Add:
+   ```r
+   if (interactive() && requireNamespace("btw", quietly = TRUE)) {
+     try(btw::btw_mcp_session(), silent = TRUE)
+   }
+   ```
+   This fails gracefully when `btw` is absent, so it is safe to keep in a shared `~/.Rprofile`. Restart your R session after adding it.
+
+To check both prerequisites at once, run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
+
+```
+bash scripts/r-btw-doctor.sh
+```
+
+It reports what is present, prints the exact fix for anything missing, and exits non-zero if the MCP will not attach. The skill and hooks are unaffected by any of these checks.
 
 ## Install
 
-The repo is its own marketplace. Add it once, then enable the plugin where you want it.
+Install from the `skills` marketplace, then enable the plugin where you want it.
 
 ```
-/plugin marketplace add Felixmil/r-pkg-dev
-/plugin install r-pkg-dev@r-pkg-dev
+/plugin marketplace add Felixmil/skills
+/plugin install r-pkg-dev@skills
 ```
 
 To keep it updating from `main` automatically, ensure the marketplace has `autoUpdate: true` in your Claude settings (this is set when you add it through the marketplace, matching the other GitHub-backed marketplaces already in use).
