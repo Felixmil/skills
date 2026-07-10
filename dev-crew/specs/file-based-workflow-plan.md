@@ -210,7 +210,7 @@ Two independent decisions, evaluated separately:
 
 ## End-to-end verification checklist (maps to acceptance criteria 1-12)
 
-1. `/run-pipeline <n> auto` on a fresh issue -> `spec.md`, `plan.md`, a real linked PR, `build.md`, `qa.md` under `~/Code/<repo>.issues/<n>/`; `state.json.status` walks the full sequence; no question surfaced; zero issue-thread comments and zero PR bookkeeping comments. (acceptance 1)
+1. `/run-pipeline <n> auto` on a fresh issue -> `spec.md`, `plan.md`, a real linked PR, `build.md`, `qa.md` under `<parent>/<repo>.issues/<n>/`; `state.json.status` walks the full sequence; no question surfaced; zero issue-thread comments and zero PR bookkeeping comments. (acceptance 1)
 2. Inspect the test issue: zero workflow-added comments; the only GitHub writes are the PR + its `Closes #N`; PR body reads clean and repo-facing; `build.md` is the fuller, *different* summary. (acceptance 2)
 3. `semi-auto`: force an agent to raise a genuine ambiguity -> session pauses on inline `AskUserQuestion`; answering (from agent view or session) resumes the same run; artifacts otherwise auto-approve. (acceptance 3)
 4. `manual`: each phase stops for inline approve/revise after writing; `revise` re-runs + re-writes in place; `approve` advances; questions still surface as in semi-auto. (acceptance 4)

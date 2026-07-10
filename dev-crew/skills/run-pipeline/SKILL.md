@@ -17,7 +17,7 @@ Take the issue from wherever `state.json` says it is to the next resting point, 
 
 Follow `${CLAUDE_PLUGIN_ROOT}/references/pipeline/state-and-setup.md` for the argument parse, folder bootstrap, mode reconcile, and job rename. This pipeline fills its two deltas as follows:
 
-- **State root**: `<parent>/<repo>.issues`, derived from git. Run `git rev-parse --show-toplevel` for the working-tree root; its basename is `<repo>`, its parent is `<parent>`. Example: a repo at `~/Code/esqlabsR` gives a state root of `~/Code/esqlabsR.issues`.
+- **State root**: `<parent>/<repo>.issues`, derived from git. Run `git rev-parse --show-toplevel` for the working-tree root; its basename is `<repo>`, its parent is `<parent>`. Example: a repo at `/path/to/myrepo` gives a state root of `/path/to/myrepo.issues`.
 - **Seed object**: the standard fields (`status: open`, `mode`, `branch`, `prNumber`, `qaVerdict`, `pendingQuestion`, `dependsOn`), no extras.
 - **Archive check (before bootstrap).** A merged issue's folder is moved to `<root>/archive/<issue>/` by `/merge-pr`. If `<root>/archive/<issue>/` exists, the issue is closed and shipped: do not re-bootstrap an empty active folder; tell the user it is already merged and archived and stop (unless they explicitly want to re-open it, in which case they move it back out of `archive/` themselves).
 

@@ -7,7 +7,7 @@ description: R package development conventions covering R code, dependencies, DE
 
 These are the conventions to follow in any R package. Apply them whenever the current work touches an R package, not only when explicitly asked.
 
-This plugin also declares the `r-btw` MCP server, which exposes tools that read an R session (`mcp__r-btw__*`). They need the `btw` package but no `~/.Rprofile` setup: just try a tool, it works whether or not an interactive R session has registered. If the tools are unavailable, fall back to running `Rscript`/`R CMD` from the shell in the project directory, and point the user to this plugin's `scripts/r-btw-doctor.sh` to diagnose the r-btw setup. The conventions below do not depend on the MCP server.
+This plugin also declares the `r-btw` MCP server, which exposes tools that read an R session (`mcp__r-btw__*`). They need the `btw` package but no `~/.Rprofile` setup: just try a tool, it works whether or not an interactive R session has registered. If the tools are unavailable, fall back to running `Rscript`/`R CMD` from the shell in the project directory, and point the user to this plugin's `scripts/r-btw-doctor.mjs` (`node scripts/r-btw-doctor.mjs`) to diagnose the r-btw setup. The conventions below do not depend on the MCP server.
 
 ## Agent workflow (work efficiently)
 

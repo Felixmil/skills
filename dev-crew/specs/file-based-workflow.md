@@ -75,7 +75,7 @@ The mode controls two separate behaviours: whether the pipeline **surfaces quest
 
 ## Where local state lives (FR-LOC)
 
-- **FR-LOC-1**: State lives under a **root directory outside the repository tree**, a sibling of the checkout named `<repo>.issues/`. For `~/Code/esqlabsR`, the root is `~/Code/esqlabsR.issues/`. Matches the worktree-sibling convention, never pollutes the repo, needs no `.gitignore`, and survives branch/worktree changes because it is outside every worktree.
+- **FR-LOC-1**: State lives under a **root directory outside the repository tree**, a sibling of the checkout named `<repo>.issues/`. For `/path/to/myrepo`, the root is `/path/to/myrepo.issues/`. Matches the worktree-sibling convention, never pollutes the repo, needs no `.gitignore`, and survives branch/worktree changes because it is outside every worktree.
 - **FR-LOC-2**: The root is derived, not configured: the main-checkout name is the basename of the parent of git's common dir (`git rev-parse --git-common-dir` returns `.../<repo>/.git`, whose parent's basename is `<repo>`), so all worktrees of the same repository share one state root; outside a worktree this equals the current toplevel's basename.
 - **FR-LOC-3**: Each issue has its own folder named by issue number: `<repo>.issues/142/`. All state and artifacts for issue 142 live there and nowhere else.
 - **FR-LOC-4**: The folder is created on first use and idempotent to re-create. A re-run reads and updates it in place; it never wipes prior artifacts except by the in-place revision rules below.
@@ -160,7 +160,7 @@ The mode controls two separate behaviours: whether the pipeline **surfaces quest
 
 ## Acceptance criteria
 
-1. `/run-pipeline <issue> auto` on a fresh issue produces `spec.md`, `plan.md`, a real linked PR, `build.md`, `qa.md` under `~/Code/<repo>.issues/<issue>/`, advances `state.json.status` through the full sequence, surfaces no questions, and posts nothing to the issue thread and no bookkeeping comment to the PR.
+1. `/run-pipeline <issue> auto` on a fresh issue produces `spec.md`, `plan.md`, a real linked PR, `build.md`, `qa.md` under `<parent>/<repo>.issues/<issue>/`, advances `state.json.status` through the full sequence, surfaces no questions, and posts nothing to the issue thread and no bookkeeping comment to the PR.
 2. The GitHub issue thread has zero comments added by the workflow; the only GitHub writes are the PR and its `Closes #N`. The PR body reads as a clean repo-facing description; `build.md` (local) is the fuller summary and differs from it.
 3. `semi-auto`: when an agent raises a genuine ambiguity, the session pauses on an inline `AskUserQuestion`; answering it (from agent view or the session) resumes the same run; artifacts are otherwise auto-approved.
 4. `manual`: each phase stops for inline approve/revise after writing its artifact; `revise` re-runs the phase and re-writes the artifact in place; `approve` advances. Questions are also surfaced inline as in semi-auto.

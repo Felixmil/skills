@@ -52,11 +52,11 @@ All three pipelines handle every human decision inline through `AskUserQuestion`
 Install the plugin:
 
 ```
-/plugin marketplace add ~/Code/dev-crew
-/plugin install dev-crew@dev-crew
+/plugin marketplace add Felixmil/skills
+/plugin install dev-crew@skills
 ```
 
-The marketplace path is the on-disk repo directory; the plugin and marketplace are both named `dev-crew`. After you install it, the six agents (`spec-writer`, `investigator`, `planner`, `builder`, `reviewer`, `conflict-resolver`) are available as `subagent_type`, and every skill (`/run-pipeline`, `/run-pipeline-gh`, `/debug-pipeline`, `/refine-issue`, `/create-local-issue`, `/update-branch`, `/address-pr`, `/merge-pr`) is available in every project.
+The plugin ships in the `skills` marketplace. After you install it, the six agents (`spec-writer`, `investigator`, `planner`, `builder`, `reviewer`, `conflict-resolver`) are available as `subagent_type`, and every skill (`/run-pipeline`, `/run-pipeline-gh`, `/debug-pipeline`, `/refine-issue`, `/create-local-issue`, `/update-branch`, `/address-pr`, `/merge-pr`) is available in every project.
 
 The transition script both pipelines use (`scripts/pipeline-transition.sh`) ships inside the plugin and is invoked through the plugin-root path variable, `"${CLAUDE_PLUGIN_ROOT}/scripts/pipeline-transition.sh"`, so it travels with the install and needs no copying into a target repo.
 
@@ -74,10 +74,10 @@ The GitHub issue is the input, and a pull request is the ship channel. Nothing i
 
 ### The `<repo>.issues/` layout
 
-State lives next to the repo, never inside it. The skill derives the root from git: a repo whose working tree is at `~/Code/esqlabsR` gets a state root of `~/Code/esqlabsR.issues`, and each issue gets a folder under it:
+State lives next to the repo, never inside it. The skill derives the root from git: a repo whose working tree is at `/path/to/myrepo` gets a state root of `/path/to/myrepo.issues`, and each issue gets a folder under it:
 
 ```
-~/Code/esqlabsR.issues/
+/path/to/myrepo.issues/
   142/            an active issue: the pipeline is driving it, or it is waiting
     state.json    the pipeline state; the only file whose "status" is gated
     spec.md       written by spec-writer

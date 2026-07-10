@@ -18,11 +18,12 @@ A Claude Code plugin that packages R package development conventions, guardrail 
 
 The **skill and guardrail hooks work with no external setup**; each hook degrades to a silent no-op when a tool or package it needs is missing, so a partial environment never errors. To get the full value, install the following.
 
+The hooks are Node scripts (`.mjs`), so they run identically on macOS, Linux, and native Windows: Claude Code ships Node on every platform, so no POSIX shell, Git Bash, or `jq` is needed.
+
 ### System tools
 
-- [Air](https://posit-dev.github.io/air/) on `PATH` (or in `~/.local/bin` or `/usr/local/bin`) for the format hook.
+- [Air](https://posit-dev.github.io/air/) on `PATH` (or, on Unix, in `~/.local/bin` or `/usr/local/bin`) for the format hook.
 - `Rscript` on `PATH` for the R-based hooks and the MCP server.
-- `jq` for the hook payload parsing.
 
 ### R packages
 
@@ -41,10 +42,10 @@ The `r-btw` MCP server exposes tools that read an R session (files, git, package
 
 To attach an interactive session, run `btw::btw_mcp_session()` in a console started inside the project. Prefer running it deliberately over auto-registering from `~/.Rprofile`: R sources a project `.Rprofile` instead of `~/.Rprofile` when one is present (as every renv project ships), so a `~/.Rprofile` call never runs in renv projects, and auto-registering many sessions makes the server route to whichever registered first rather than the one matching your project. The `r-conventions` skill's `references/btw-mcp.md` documents how to pick the right session (`list_r_sessions` / `select_r_session`) and the renv implications in full.
 
-To check the r-btw prerequisites (Rscript and the `btw` package), run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
+To check the r-btw prerequisites (Rscript and the `btw` package), run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.mjs` in this plugin):
 
 ```
-bash scripts/r-btw-doctor.sh
+node scripts/r-btw-doctor.mjs
 ```
 
 It reports what is present and prints the exact fix for anything missing. The skill and hooks are unaffected by these checks.

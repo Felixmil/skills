@@ -46,4 +46,4 @@ When a tool result does not match the current project, or you specifically need 
 
 ## When the tools are unavailable
 
-If the `mcp__r-btw__*` tools are absent (no `btw`, no `Rscript`, or the server did not start), fall back to running `Rscript` / `R CMD` from the shell in the project directory. Started in-project, a plain `Rscript` invocation sources the project `.Rprofile` and so gets the same renv-correct library the no-session server process does, just without any warm state. Point the user to `scripts/r-btw-doctor.sh` to diagnose the r-btw setup.
+If the `mcp__r-btw__*` tools are absent (no `btw`, no `Rscript`, or the server did not start), fall back to running `Rscript` / `R CMD` from the shell in the project directory. Started in-project, a plain `Rscript` invocation sources the project `.Rprofile` and so gets the same renv-correct library the no-session server process does, just without any warm state. Point the user to `scripts/r-btw-doctor.mjs` (`node scripts/r-btw-doctor.mjs`) to diagnose the r-btw setup.

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-tests-before-commit.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-tests-before-commit.mjs\"",
             "statusMessage": "test suite gate (pre-commit)"
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.mjs\"",
             "statusMessage": "R CMD check gate (pre-push)"
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/air-format.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/air-format.mjs\"",
             "statusMessage": "air format"
           }
         ]
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-r-code.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-r-code.mjs\"",
             "statusMessage": "R code guardrail"
           }
         ]
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-docs.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-docs.mjs\"",
             "statusMessage": "roxygen docs check"
           }
         ]
@@ -58,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-pkgdown-index.sh",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-pkgdown-index.mjs\"",
             "statusMessage": "pkgdown index check"
           }
         ]

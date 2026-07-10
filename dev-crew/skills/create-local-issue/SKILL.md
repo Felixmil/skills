@@ -13,7 +13,7 @@ After this skill runs you can refine it (`/refine-issue L3`) and drive the full 
 
 1. **Derive the state root from git** (identical to the run-pipeline skill, so both agree on where folders live):
    - `git rev-parse --show-toplevel` gives the working-tree root; its basename is `<repo>`, its parent is `<parent>`.
-   - The state root is `<parent>/<repo>.issues`. Example: a repo at `~/Code/rollr2` gives `~/Code/rollr2.issues`.
+   - The state root is `<parent>/<repo>.issues`. Example: a repo at `/path/to/myrepo` gives `/path/to/myrepo.issues`.
    - Inside a worktree, use `git rev-parse --git-common-dir` to resolve the canonical main-checkout name, so all worktrees share one root.
 
 2. **Pick the next local id.** List the existing local-issue folders: the ones under `<root>/` whose name matches `^L[0-9]+$`. Take the highest number among them and add 1; if there are none, start at `1`. The new id is `L<n>` (e.g. `L3`). Do **not** consider numeric (GitHub) folders when computing this; local and GitHub ids share the folder but not the numbering.
