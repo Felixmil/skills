@@ -6,12 +6,13 @@
 #   bash scripts/r-btw-doctor.sh
 #
 # The r-btw MCP server (declared in this plugin's .mcp.json as
-# `Rscript -e "btw::btw_mcp_server()"`) needs:
+# `Rscript -e "btw::btw_mcp_server()"`) needs only:
 #   1. Rscript on PATH.
 #   2. The `btw` R package installed.
-#   3. An interactive-session call to btw::btw_mcp_session() in the user's
-#      ~/.Rprofile, so the running R session attaches to the MCP server. Without
-#      it the server starts but has no session to expose.
+# The tools work with or without an interactive R session attached, so no
+# ~/.Rprofile change is required. Attaching a session is optional (it lets the
+# tools reuse warm in-memory state); this script reports whether one is likely
+# to attach but never fails on its absence.
 
 ok=0
 fail=0
@@ -22,6 +23,9 @@ pass() {
 bad() {
   printf '  [FAIL] %s\n' "$1"
   fail=$((fail + 1))
+}
+info() {
+  printf '  [info] %s\n' "$1"
 }
 
 echo "r-btw setup doctor"
@@ -49,27 +53,27 @@ if command -v Rscript >/dev/null 2>&1; then
   fi
 fi
 
-# 3. ~/.Rprofile calls btw::btw_mcp_session().
+# 3. Optional: an attached interactive session. Reported, never required.
 RPROFILE="${R_PROFILE_USER:-$HOME/.Rprofile}"
 if [ -f "$RPROFILE" ] && grep -qE 'btw_mcp_session[[:space:]]*\(' "$RPROFILE" 2>/dev/null; then
-  pass "$RPROFILE calls btw::btw_mcp_session()."
+  info "$RPROFILE calls btw::btw_mcp_session(). Note this attaches only in"
+  echo "         sessions that source ~/.Rprofile; projects with their own"
+  echo "         .Rprofile (every renv project) skip it. Attaching is optional."
 else
-  bad "$RPROFILE does not call btw::btw_mcp_session()."
-  echo "         Add this to $RPROFILE so interactive R sessions attach to the"
-  echo "         MCP server (it fails gracefully if btw is absent):"
-  echo
-  echo "           if (interactive() && requireNamespace(\"btw\", quietly = TRUE)) {"
-  echo "             try(btw::btw_mcp_session(), silent = TRUE)"
-  echo "           }"
+  info "No btw::btw_mcp_session() call in $RPROFILE. That is fine: the tools"
+  echo "         run in a project-local process when no session is attached."
+  echo "         To reuse a live session's warm state, run btw::btw_mcp_session()"
+  echo "         in a console started inside the project when you want it."
 fi
 
 echo
 if [ "$fail" -eq 0 ]; then
-  echo "All checks passed ($ok/$((ok + fail))). Restart your R session so the"
-  echo ".Rprofile change takes effect, then the r-btw MCP tools will attach."
+  echo "Required checks passed ($ok/$((ok + fail))). The r-btw MCP tools are ready;"
+  echo "attaching an interactive session is optional. See the r-conventions skill's"
+  echo "references/btw-mcp.md for when and how to attach one."
   exit 0
 else
-  echo "$fail check(s) failed, $ok passed. Fix the items above, then restart R."
+  echo "$fail required check(s) failed, $ok passed. Fix the items above."
   echo "Note: the r-pkg-dev skill and guardrail hooks work regardless; only the"
   echo "r-btw MCP tools depend on these prerequisites."
   exit 1

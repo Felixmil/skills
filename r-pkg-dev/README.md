@@ -33,27 +33,21 @@ install.packages(c("devtools", "btw"))
 - `devtools` provides the development workflow the conventions rely on and, as dependencies, pulls in every other package the plugin uses: `roxygen2` (the roxygen-docs hook), `pkgdown` (the pkgdown-index hook), and `testthat`, `usethis`, `withr`, `rlang`, and `lifecycle` (referenced by the testing, dependency, and lifecycle conventions).
 - `btw` powers the `r-btw` MCP server (development version: `pak::pak("posit-dev/btw")`).
 
-The **`r-btw` MCP server needs one more setup step** that a plugin cannot do for you (see next section). If it is unmet, the server simply fails to connect and the rest of the plugin is unaffected.
+The **`r-btw` MCP server needs no setup beyond installing `btw`** (see next section). If `btw` is absent the server simply fails to connect and the rest of the plugin is unaffected.
 
 ## r-btw MCP setup
 
-The `r-btw` MCP server exposes tools that read your live R session (files, git, package dev, session info). It is declared in `.mcp.json` as `Rscript -e "btw::btw_mcp_server()"`. Beyond installing `btw` (above), it needs a **session-attach call in your `~/.Rprofile`,** so an interactive R session attaches to the MCP server. Add:
+The `r-btw` MCP server exposes tools that read an R session (files, git, package dev, session info). It is declared in `.mcp.json` as `Rscript -e "btw::btw_mcp_server()"`, and Claude Code launches it with the current project as its working directory. Once `btw` is installed there is nothing else to configure: the tools work whether or not an interactive R session is attached. With no session attached, a tool call runs in the server's own project-local process (correct project files and, for an renv project, the project library, but no live in-memory objects). Attach an interactive session only when you want the tools to reuse its warm state.
 
-```r
-if (interactive() && requireNamespace("btw", quietly = TRUE)) {
-  try(btw::btw_mcp_session(), silent = TRUE)
-}
-```
+To attach an interactive session, run `btw::btw_mcp_session()` in a console started inside the project. Prefer running it deliberately over auto-registering from `~/.Rprofile`: R sources a project `.Rprofile` instead of `~/.Rprofile` when one is present (as every renv project ships), so a `~/.Rprofile` call never runs in renv projects, and auto-registering many sessions makes the server route to whichever registered first rather than the one matching your project. The `r-conventions` skill's `references/btw-mcp.md` documents how to pick the right session (`list_r_sessions` / `select_r_session`) and the renv implications in full.
 
-This fails gracefully when `btw` is absent, so it is safe to keep in a shared `~/.Rprofile`. Restart your R session after adding it.
-
-To check the r-btw prerequisites at once (Rscript, the `btw` package, and the `~/.Rprofile` call), run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
+To check the r-btw prerequisites (Rscript and the `btw` package), run the bundled doctor script (`r-pkg-dev/scripts/r-btw-doctor.sh` in this plugin):
 
 ```
 bash scripts/r-btw-doctor.sh
 ```
 
-It reports what is present, prints the exact fix for anything missing, and exits non-zero if the MCP will not attach. The skill and hooks are unaffected by any of these checks.
+It reports what is present and prints the exact fix for anything missing. The skill and hooks are unaffected by these checks.
 
 ## Install
 
