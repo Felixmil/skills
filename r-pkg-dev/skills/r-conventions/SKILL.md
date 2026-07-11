@@ -5,112 +5,141 @@ description: R package development conventions covering R code, dependencies, DE
 
 # R package development conventions
 
-These are the conventions to follow in any R package. Apply them whenever the current work touches an R package, not only when explicitly asked.
-
-## Agent workflow (work efficiently)
-
-- Run the development commands with `Rscript -e '...'` from the shell, in the package's directory so the project `.Rprofile` (and, for an renv project, its library) is picked up. Keep each call cheap by scoping it tightly rather than by keeping state warm across calls.
-- To pick up code changes, use `devtools::load_all()`; never `R CMD INSTALL` / `install.packages()` the package under development just to test an edit.
-- Work the tight loop: edit, `load_all()`, run the narrowest relevant test (`testthat::test_file()`, or `devtools::test(filter = "...")`), and only widen scope once it passes. Reserve the slow full `devtools::check()` for pre-release or when you need CRAN-like validation, not for every change.
-- Prefer one `Rscript -e '...'` call that chains the steps you need (for example `devtools::load_all(); testthat::test_file("tests/testthat/test-foo.R")`) over several separate calls, so a single R startup covers the whole step instead of paying it per command.
-- Commit at a point where the whole suite is green: `git commit` runs the full `devtools::test()` suite and blocks if anything fails, so reach a green stopping point before committing rather than committing mid-break.
-- `git push` runs `R CMD check` and blocks on any error, so expect the push to take a few minutes and make sure the package checks cleanly before pushing.
-- Run `devtools::document()` after editing roxygen comments or changing `@export`/`@import` tags, before running tests or check, so `man/` and `NAMESPACE` are current.
-
-## General
-
-- Never edit files (or resolve merge conflicts) in `man/` or `NAMESPACE` manually. Regenerate them with `devtools::document()`.
+Apply these whenever the current work touches an R package, not only when asked.
 
 ## R code (below `R/`)
 
-Some of the rules below are enforced by a guardrail hook shipped with this plugin (`library()`/`require()`/`source()`, cross-package `:::`, `setwd()`, `.First.lib`/`.Last.lib`, writing to `~`, and a warning on bare `T`/`F`). The rest are conventions to apply by hand.
+A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cross-package `:::`, `setwd()`, `.First.lib`/`.Last.lib`, writing to `~`, bare `T`/`F`); the rest are by hand.
 
-- Never call `library()`, `require()`, or `source()` in code below `R/`. Declare dependencies in `DESCRIPTION` (`Imports`/`Suggests`) and reach functions with `pkg::fun()`; when iterating, use `devtools::load_all()`, never `source()`.
-- Default to `pkg::fun()` for calls into other packages. Only import into your `NAMESPACE` (via `@importFrom`) when the object is an operator, is used very heavily, or is called in a tight loop where the `::` lookup cost matters.
-- Never use `:::` to reach into another package's internal namespace; it fails `R CMD check`. Use `::` for exported functions. Same-package `mypkg:::internal()` is fine.
-- Guard every use of a `Suggests` package with `rlang::check_installed()`, `rlang::is_installed()`, or `requireNamespace("pkg", quietly = TRUE)` before calling it.
-- Use `TRUE`/`FALSE`, never the `T`/`F` shortcuts, as logicals (`T` and `F` can be silently rebound).
-- `.R` files should be almost entirely function definitions. Any top-level code that runs at build time (`Sys.time()`, `system.file()`, `options()`, caching a result, aliasing `foo <- pkg::blah`) is a bug; move it inside a function so it runs at load or call time.
-- Put `.onLoad`/`.onAttach`/`.onUnload` in `R/zzz.R`. S3 method registration and `library.dynam()` go in `.onLoad`; user-facing startup text goes in `.onAttach` via `packageStartupMessage()` (never bare `message()`); cleanup goes in `.onUnload`. `.First.lib`/`.Last.lib` are forbidden.
-- Manage mutable package state with an internal environment defined at top level (typically `R/aaa.R`): `the <- new.env(parent = emptyenv())`. Never rely on `<<-` to rebind a namespace object; namespace bindings are locked.
-- Leave the world as you found it: no `setwd()`, no writing to the user's home or working directory. Persistent user data goes under `tools::R_user_dir()`; scratch goes under `tempdir()` and is cleaned up.
-- Keep `.R` files ASCII for CRAN. Express non-ASCII characters with `\uXXXX` escapes in code; literal non-ASCII is only acceptable in comments.
-- Export as little as possible. Internal utilities stay unexported (document with `@noRd`, no `.Rd` generated). For a function that is developer-facing but not user-facing, use `@export` together with `@keywords internal`. Prefer explicit `@export` over `exportPattern()`.
-
-## Dependencies (`DESCRIPTION`)
-
-- Use `Imports` for package dependencies, not `Depends`. Reserve `Depends` for an R-version floor (`Depends: R (>= x.y.z)`), and set that floor only for a tested reason.
-- Never depend on a meta-package (`tidyverse`, `devtools`); depend on the specific package you actually use.
-- Every package referenced in `NAMESPACE` (via `import`/`importFrom`) must appear in `Imports` or `Depends`. Every package used in a test, vignette, or example must be a formal dependency (`Imports` or `Suggests`).
-- Specify minimum versions with `>=` only, never an exact `==` pin.
-- To use a newer feature of a dependency, either bump its minimum version in `Imports` (only `Imports` floors are enforced) or branch at run time on `packageVersion()` / `rlang::check_installed(version = )`.
-- Set `Encoding: UTF-8`. Do not add a `Date:` field (tooling fills it at build time). Custom fields must be prefixed `Config/` (for example `Config/testthat/edition: 3`).
-- Opt into the current testthat edition with `Config/testthat/edition: 3` in `DESCRIPTION`.
-
-## Data
-
-- Store each exported dataset as one `.rda` per object under `data/` (the object name matching the file name), and set `LazyData: true`. Never `@export` a dataset; document the dataset by its name string in `R/` with `@format` and `@source`.
-- Put internal data in a single `R/sysdata.rda` (never documented, never under `data/`).
-- Keep data-generation ("workflow") code in `data-raw/`, listed in `.Rbuildignore`, never below `R/`.
+- No `library()`/`require()`/`source()` below `R/`. Declare deps in `DESCRIPTION` (`Imports`/`Suggests`), reach functions with `pkg::fun()`; when iterating use `devtools::load_all()`.
+- Default to `pkg::fun()`. Import into `NAMESPACE` (`@importFrom`) only for operators, heavy use, or tight loops where `::` lookup cost matters.
+- Never `:::` into another package (fails `R CMD check`); `::` for exported, same-package `mypkg:::internal()` is fine.
+- Guard every `Suggests` use with `rlang::check_installed()`, `rlang::is_installed()`, or `requireNamespace("pkg", quietly = TRUE)`.
+- Use `TRUE`/`FALSE`, never `T`/`F` (they can be rebound).
+- `.R` files are almost entirely function definitions. Top-level code running at build time (`Sys.time()`, `system.file()`, `options()`, caching, aliasing `foo <- pkg::blah`) is a bug; move it inside a function.
+- `.onLoad`/`.onAttach`/`.onUnload` go in `R/zzz.R`. S3 registration and `library.dynam()` in `.onLoad`; startup text in `.onAttach` via `packageStartupMessage()` (never bare `message()`); cleanup in `.onUnload`. `.First.lib`/`.Last.lib` forbidden.
+- Hold mutable state in a top-level internal environment (`R/aaa.R`): `the <- new.env(parent = emptyenv())`. Never `<<-` to rebind a namespace object (bindings are locked).
+- Leave the world as found: no `setwd()`, no writing to home or the working dir. Persistent data under `tools::R_user_dir()`, scratch under `tempdir()`.
+- Keep `.R` ASCII for CRAN: `\uXXXX` escapes in code, literal non-ASCII only in comments.
+- Export minimally. Internal utilities unexported (`@noRd`). Developer-facing-but-not-user-facing: `@export` plus `@keywords internal`. Prefer explicit `@export` over `exportPattern()`.
 
 ## Code style
 
-- Use the base pipe `|>`, not the magrittr pipe `%>%`.
-- Use `\() ...` for single-line anonymous functions; use `function() {...}` for multi-line ones.
-- Within a single `.R` file, order definitions so user-facing (exported) functions come first, and internal/helper functions (`@keywords internal`, non-exported, or `.`-prefixed helpers) come after the exported functions they support.
+- Base pipe `|>`, not `%>%`.
+- `\() ...` for single-line anonymous functions; `function() {...}` for multi-line.
+- Order a file's definitions exported-first, then the internal/helper functions (`@keywords internal`, unexported, `.`-prefixed) that support them.
 
 ## Formatting
 
-- `.R` files are auto-formatted with [Air](https://posit-dev.github.io/air/) via a `PostToolUse` hook (shipped with this plugin), so no manual `air format` is needed after editing them. Air does not support `.qmd`/`.Rmd`; do not run it on those.
-- Use standard syntax for code sections:
+- `.R` files are auto-formatted with [Air](https://posit-dev.github.io/air/) via a `PostToolUse` hook, so no manual `air format` is needed. Air does not support `.qmd`/`.Rmd`.
+- Code-section syntax:
   ```
   # Section One ----
   # Section Two ====
   ### Section Three ####
   ```
 
-## Testing
+## Dependencies (`DESCRIPTION`)
 
-- Tests must be self-sufficient: all setup inside the `test_that()` block, no shared mutable state between tests.
-- Test files are named `test-*.R` and mirror their `R/` source: `R/foofy.R` pairs with `tests/testthat/test-foofy.R`. Only `helper*`, `setup*`, and `test*` files are auto-run.
-- Do not call `library()` or `source()` in test files; `devtools::load_all()` already attaches testthat and your package namespace. File-scope setup belongs inside the test, in `R/`, or in a `helper*.R`/`setup*.R` file, not as free-floating top-level code.
-- Do not hand-edit `tests/testthat.R`; it is generated boilerplate that only runs under `R CMD check`.
-- Use `withr::local_*()` for any state change in tests (`local_options`, `local_envvar`, `local_tempfile`, `local_tempdir`, `local_dir`). Never bare `options()`, `Sys.setenv()`, or manual cleanup.
-- Fixture paths via `test_path("fixtures", ...)`, never relative paths. Outputs go to `withr::local_tempfile()` / `local_tempdir()`, never the package directory.
-- For errors and warnings, prefer `expect_snapshot(error = TRUE)` (errors) and `expect_snapshot()` (warnings) over `expect_error()` / `expect_warning()`, so the full message text is reviewable.
-- Avoid `expect_true()` / `expect_false()` when a more specific expectation exists (`expect_equal`, `expect_length`, `expect_named`, `expect_s3_class`, etc.); specific expectations give better failure messages.
-- Use `expect_equal()` (not `expect_identical()`) for numeric comparisons, since floating-point results vary by platform. Do not assert on timing or on a specific number of cores.
-- When asserting several parts of the same object (e.g. `object$id`, `object$value`, `object[["x"]]`), prefer `expect_snapshot()` (or `expect_snapshot_value()`) over multiple `expect_equal()` / `expect_identical()` calls on the same object. Applies to any object: list, named vector, S3/S4/R6, data frame, etc.
-- Apply `skip_on_cran()` (and `skip_if_offline()`, `skip_if_not_installed()`) per test, not hoisted to the file top, for long-running, flaky, or network-dependent tests. Keep the whole suite fast (aim for well under a minute).
-- After a code change, escalate test scope progressively. Only broaden scope once the narrower run passes:
-  1. Single `test_that()` block: `testthat::test_file("tests/testthat/test-foo.R", desc = "specific description")`
-  2. Whole file: `testthat::test_file("tests/testthat/test-foo.R")`.
-  3. Several files: `devtools::test(filter = "foo|bar")` (the `filter` regex matches file names, without the `test-` prefix or extension).
-  4. Full suite: `devtools::test()`.
-- `devtools::test_active_file(...)` is an alternative for steps 1-2, but mind how it resolves the test file. Given a test file (`tests/testthat/test-foo.R`) it always works. Given a source file (`R/foo.R`) it derives the test path from the name (`test-foo.R`) and errors with "No test files found" when that file does not exist, so only pass a source path when the matching `test-{name}.R` exists. When source and test names do not correspond (common in packages where naming has drifted), use `devtools::test(filter = "foo")` instead.
-- Always run tests with `NOT_CRAN=true` set in the environment (e.g. `NOT_CRAN=true Rscript -e '...'`). Without it, testthat treats the run as a CRAN context and silently skips `skip_on_cran()` tests, `expect_snapshot()` blocks, and other CRAN-gated cases, so a passing run can hide unrun tests and never record a new snapshot.
-- Never pipe tests into `tail`. `summaryReporter` already returns condensed results.
+- `Imports`, not `Depends`. Reserve `Depends` for an R-version floor (`Depends: R (>= x.y.z)`), set only for a tested reason.
+- Never depend on a meta-package (`tidyverse`, `devtools`); name the specific package.
+- Every package in `NAMESPACE` (`import`/`importFrom`) must be in `Imports`/`Depends`; every package used in a test, vignette, or example must be a formal dependency (`Imports`/`Suggests`).
+- Minimum versions with `>=` only, never `==`.
+- For a newer feature of a dependency, bump its `Imports` floor (only `Imports` floors are enforced) or branch at run time on `packageVersion()` / `rlang::check_installed(version = )`.
+- `Encoding: UTF-8`. No `Date:` field (tooling fills it). Custom fields prefixed `Config/` (e.g. `Config/Needs/website`).
+- Opt into testthat edition 3: `Config/testthat/edition: 3`.
 
 ## Documentation
 
-- Update `NEWS.md` when making a user-facing change. The audience of a bullet is a user upgrading from the **last released version**, not someone reading the dev-cycle diff. Frame every bullet as the net delta from the last release tag to the upcoming release.
-- Do not add a bullet for a change that only modifies behaviour introduced earlier in the **same** development cycle. If your change supersedes, refines, or reverts an existing bullet in the development-version section, edit that bullet in place (or delete it if the net delta from the last release is now zero) rather than appending a sibling bullet that narrates the intra-cycle journey.
-- Before adding or editing a bullet, re-read the existing development-version section and reconcile each bullet that touches the area you changed against the current branch state. A bullet that was accurate when written may now be misleading.
-- Do not add bullets for small documentation changes or internal refactorings.
-- When a bullet relates to a specific function, put the function name early in the bullet. Order the bullets within a section alphabetically by that function name, with any bullets that do not relate to a specific function placed first.
-- Follow the tidyverse `NEWS.md` structure (https://style.tidyverse.org/news.html): write each bullet for a user (not a developer), as a single line ending with a period, in the present tense, framed positively (what now happens, not what no longer breaks). Wrap every function, argument, and file name in backticks, functions with trailing parens (`fun()`). Credit external contributors and link issues in parentheses just before the final period, e.g. `(@user, #123)`. Each version is a level-1 heading (`# pkg 1.2.3`); for a large release, group bullets under level-2 headings (`## Breaking changes`, `## New features`, `## Minor improvements and fixes`), with breaking changes first.
-- If `_pkgdown.yml` exists, always make sure it is up to date after editing files in `vignettes/`, and keep the reference index in sync with the package's exports.
-- Every exported function documents its return value with `@returns` and has at least one runnable `@examples` (not everything wrapped in `\dontrun{}`). Examples must run in well under the CRAN limit and leave the world unchanged.
-- Prefer `try()` over `\dontrun{}` to show an error in an example. Do not use `\donttest{}` (CRAN runs it anyway). For examples that need a suggested package or other precondition, use `@examplesIf cond()` rather than wrapping the body in `if () {}` or `requireNamespace()`.
-- Keep `README.md` in sync with `README.Rmd`: render with `devtools::build_readme()`, never hand-edit `README.md`.
-- Roxygen comment blocks wrap at 80 characters.
+- Never hand-edit `man/` or `NAMESPACE` (nor resolve their conflicts by hand); regenerate with `devtools::document()` after changing roxygen or `@export`/`@import`.
+- Every exported function has `@returns` and at least one runnable `@examples` (not all `\dontrun{}`); examples run well under the CRAN limit and leave the world unchanged.
+- Prefer `try()` over `\dontrun{}` to show an error; never `\donttest{}` (CRAN runs it anyway). For a needed suggested package or precondition, use `@examplesIf cond()`, not an `if () {}` / `requireNamespace()` wrapper.
+- Roxygen comments wrap at 80 characters.
+- Keep `README.md` in sync via `devtools::build_readme()`; never hand-edit `README.md`.
+- If `_pkgdown.yml` exists, keep it current after editing `vignettes/`, and keep the reference index in sync with exports.
+
+`NEWS.md` (user-facing changes only, not small doc/internal changes):
+
+- Frame each bullet as the net delta from the last release tag, for a user upgrading from the last released version, not the dev-cycle diff.
+- Do not narrate intra-cycle churn: if a change supersedes/reverts a bullet from the same dev cycle, edit that bullet in place (or delete it if the net delta is now zero) instead of adding a sibling. Re-read and reconcile the dev-version section before adding.
+- Function-related bullets lead with the function name; order bullets alphabetically by that name, non-function bullets first.
+- Tidyverse structure (https://style.tidyverse.org/news.html): one line per bullet, present tense, positive framing; backtick every function/argument/file (functions with `()`); credit and link issues before the final period, e.g. `(@user, #123)`. Version is an `# pkg 1.2.3` heading; large releases group under `## Breaking changes` / `## New features` / `## Minor improvements and fixes`, breaking first.
+
+## Testing
+
+Conventions for *writing* tests; for running them and R CMD check, see "Running tests and R CMD check".
+
+- Self-sufficient: all setup inside the `test_that()` block, no shared mutable state.
+- Files named `test-*.R`, mirroring `R/` source (`R/foofy.R` <-> `tests/testthat/test-foofy.R`). Only `helper*`, `setup*`, `test*` are auto-run.
+- No `library()`/`source()` in tests (`load_all()` attaches testthat and your namespace). File-scope setup goes inside the test, in `R/`, or in `helper*.R`/`setup*.R`.
+- Do not hand-edit `tests/testthat.R` (generated; runs only under `R CMD check`).
+- `withr::local_*()` for any state change (`local_options`, `local_envvar`, `local_tempfile`, `local_tempdir`, `local_dir`); never bare `options()`/`Sys.setenv()`/manual cleanup.
+- Fixtures via `test_path("fixtures", ...)`, never relative paths. Outputs to `withr::local_tempfile()`/`local_tempdir()`, never the package dir.
+- `skip_on_cran()` (and `skip_if_offline()`, `skip_if_not_installed()`) per test, not hoisted to the file top, for slow/flaky/network tests.
+
+Choosing an expectation:
+
+- Errors and warnings: prefer `expect_snapshot(error = TRUE)` (errors) / `expect_snapshot()` (warnings) over `expect_error()` / `expect_warning()`, so the full text is reviewable.
+- Several parts of one object: prefer `expect_snapshot()` (or `expect_snapshot_value()`) over multiple `expect_equal()`/`expect_identical()` on it (any object: list, vector, S3/S4/R6, data frame).
+- Avoid `expect_true()`/`expect_false()` where a specific expectation exists (`expect_equal`, `expect_length`, `expect_named`, `expect_s3_class`, ...); specific ones give better failures.
+- `expect_equal()` (not `expect_identical()`) for numeric comparisons (platform float variance). Do not assert on timing or core count.
+
+## Data
+
+- Each exported dataset is one `.rda` per object under `data/` (object name = file name), with `LazyData: true`. Never `@export` a dataset; document it by its name string in `R/` with `@format` and `@source`.
+- Internal data in a single `R/sysdata.rda` (never documented, never under `data/`).
+- Data-generation code in `data-raw/`, listed in `.Rbuildignore`, never below `R/`.
+
+## Running tests and R CMD check
+
+Run via `Rscript -e '...'` from the package directory (so the project `.Rprofile`, and an renv library, are picked up). Chain steps in one call (e.g. `devtools::load_all(); testthat::test_file("tests/testthat/test-foo.R")`) to pay R startup once. Always set `NOT_CRAN=true`; without it testthat skips `skip_on_cran()` tests, `expect_snapshot()` blocks, and other CRAN-gated cases, so a green run can hide unrun tests and never record a snapshot.
+
+- Pick up changes with `devtools::load_all()`; never `R CMD INSTALL` / `install.packages()` the package under development to test an edit.
+- Run `devtools::document()` before tests/check when roxygen or `@export`/`@import` changed (see Documentation).
+- Run to completion, not to first failure: `devtools::test(stop_on_failure = FALSE)`; `export_all = TRUE` reaches internal functions. The count line is the signal.
+- `devtools::check(error_on = "never")` returns the full report instead of aborting; `manual = FALSE` skips the PDF manual (no LaTeX); add `cran = TRUE` before release.
+
+Tight loop, widening scope only once the narrower run passes (full `devtools::check()` is not part of this loop; it is the push gate below):
+
+1. One `test_that()`: `testthat::test_file("tests/testthat/test-foo.R", desc = "specific description")`.
+2. Whole file: `testthat::test_file("tests/testthat/test-foo.R")`.
+3. Several files: `devtools::test(filter = "foo|bar")` (regex on file names, minus the `test-` prefix and extension).
+4. Full suite: `devtools::test()`.
+
+`devtools::test_active_file(path)` also does steps 1-2, but only pass a source path (`R/foo.R`) when `test-foo.R` exists, since it derives the test path from the name and errors "No test files found" otherwise. When source and test names diverged, use `devtools::test(filter = "foo")`.
+
+### Inspecting a large run without context bloat
+
+`test()`/`check()` output is big on a large package. Redirect the run to a log, scan a summary, and re-read one failure from the file instead of re-running. Write logs to a scratch path (`tempdir()` or the system temp area), never the package tree.
+
+1. Run once into a log. The `llm` reporter (testthat's default under a coding agent; pass it explicitly so the format holds everywhere) prints nothing for passing tests, one block per problem, and a final count line:
+   ```
+   NOT_CRAN=true Rscript -e 'devtools::test(reporter = "llm", stop_on_failure = FALSE, export_all = TRUE)' > test.log 2>&1
+   ```
+2. Summary: `grep -E '^\[ (FAIL|OK)' test.log` -> `[ FAIL 5 | WARN 4 | SKIP 7 | PASS 102 ]`. `FAIL` 0 means green, stop.
+3. Problem index, no backtraces: `grep -nE '^(ERROR|FAILURE|WARNING|SKIP):' test.log`. Each hit is `<log-line>:<TYPE>: 'file:line:col'`.
+4. One failure in full: `Read` the log at that log-line `offset` with a small `limit` (a deep backtrace is ~15 lines).
+
+`check()` is larger; log it the same way and index with `grep -nE '^Status:|checking .* \.\.\. (WARNING|ERROR|NOTE)' check.log`, then `Read` the flagged section. Do not pipe either through `tail`: it truncates from the top and drops the message and the start of each backtrace.
+
+### Commit and push gates
+
+- Commit green: `git commit` runs the full `devtools::test()` and blocks on any failure, so reach a green point first.
+- Check clean before pushing: `git push` runs `R CMD check` and blocks on any error. Run `devtools::check()` yourself first (a few minutes) rather than hitting it at the gate.
+
+## Where to look for information
+
+Read the authoritative source before guessing at a package's API or behaviour.
+
+- pkgdown sites usually publish `llms.txt` at the doc-site root: `https://<pkg>.<org>.org/llms.txt` (e.g. `https://testthat.r-lib.org/llms.txt`, `https://dplyr.tidyverse.org/llms.txt`), a compact link index of functions and articles; fetch it to find the right reference page, then fetch that page. A 404 just means fall back to the reference index or local `?fun` / `help()`.
+- For an installed package, local `?fun`, `help(package = "pkg")`, and `vignette(package = "pkg")` are authoritative for the version you have.
 
 ## Lifecycle and versioning
 
-- Version numbers: a released version is `major.minor.patch` (always three parts, e.g. `1.0.0`, never `1.0`); an in-development version adds a fourth `.9000` component; a new package starts at `0.0.0.9000`.
-- Deprecate in phases with `lifecycle::deprecate_warn(when, what, with)` and a `deprecated` lifecycle badge in the `@description`/`@param`. For a deprecated argument, use `arg = deprecated()` as its default. Remove the deprecated surface only in a later (usually major) release.
+- Released version `major.minor.patch` (three parts, e.g. `1.0.0`); in-development adds `.9000`; a new package starts at `0.0.0.9000`.
+- Deprecate in phases with `lifecycle::deprecate_warn(when, what, with)` and a `deprecated` badge in `@description`/`@param`; a deprecated argument defaults to `deprecated()`. Remove the surface only in a later (usually major) release.
 
 ## License and bundled code
 
-- Use a standard open-source `License` field (from R's `license.db`) for CRAN. A full-text `LICENSE.md` copy must be listed in `.Rbuildignore`.
-- When bundling third-party code, preserve its copyright and license headers, add the author with `role = "cph"` in `Authors@R`, and (for CRAN, when the bundled license differs but is compatible) add a `LICENSE.note`. Check license compatibility before bundling (you cannot bundle GPL code into an MIT package).
+- Standard open-source `License` field (from R's `license.db`) for CRAN; a full-text `LICENSE.md` copy listed in `.Rbuildignore`.
+- Bundling third-party code: preserve its copyright/license headers, add the author `role = "cph"` in `Authors@R`, and (for CRAN, when the bundled license differs but is compatible) add a `LICENSE.note`. Check compatibility first (no GPL into MIT).

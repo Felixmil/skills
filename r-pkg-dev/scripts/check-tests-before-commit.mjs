@@ -77,13 +77,17 @@ process.stderr.write(
 
 // Run the suite with NOT_CRAN=true so CRAN-gated tests, snapshots, and skips are
 // not silently dropped. stop_on_failure = FALSE so all tests run; we inspect the
-// aggregate result and exit non-zero when anything failed.
+// aggregate result and exit non-zero when anything failed. The "llm" reporter
+// (testthat >= 3.3.2) prints nothing for passing tests and one compact block per
+// problem, so the blocked-commit message stays small; fall back to "summary" on
+// older testthat where "llm" does not exist.
 const { out, status } = run(
   "Rscript",
   [
     "-e",
     `
-  res <- devtools::test(reporter = testthat::SummaryReporter$new())
+  reporter <- if (utils::packageVersion("testthat") >= "3.3.2") "llm" else "summary"
+  res <- devtools::test(reporter = reporter, stop_on_failure = FALSE)
   df <- as.data.frame(res)
   n_fail <- sum(df$failed) + sum(df$error)
   if (n_fail > 0) quit(status = 1L)
