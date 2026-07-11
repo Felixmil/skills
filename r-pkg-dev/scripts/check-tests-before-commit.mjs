@@ -100,8 +100,8 @@ if (status !== 0) {
       out.trimEnd(),
       "",
       "Fix the failing tests (run the relevant test file with",
-      "testthat::test_file() or the r-btw btw_tool_pkg_test tool while",
-      "iterating), get the suite green, then commit again.",
+      "testthat::test_file() while iterating), get the suite green,",
+      "then commit again.",
     ].join("\n"),
   );
 }

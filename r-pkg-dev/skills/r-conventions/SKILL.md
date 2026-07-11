@@ -7,17 +7,15 @@ description: R package development conventions covering R code, dependencies, DE
 
 These are the conventions to follow in any R package. Apply them whenever the current work touches an R package, not only when explicitly asked.
 
-This plugin also declares the `r-btw` MCP server, which exposes tools that read an R session (`mcp__r-btw__*`). They need the `btw` package but no `~/.Rprofile` setup: just try a tool, it works whether or not an interactive R session has registered. If the tools are unavailable, fall back to running `Rscript`/`R CMD` from the shell in the project directory, and point the user to this plugin's `scripts/r-btw-doctor.mjs` (`node scripts/r-btw-doctor.mjs`) to diagnose the r-btw setup. The conventions below do not depend on the MCP server.
-
 ## Agent workflow (work efficiently)
 
-- Prefer the `r-btw` MCP tools over spawning fresh `Rscript` processes: `mcp__r-btw__btw_tool_pkg_load_all`, `mcp__r-btw__btw_tool_pkg_test`, `mcp__r-btw__btw_tool_pkg_document`, `mcp__r-btw__btw_tool_pkg_check`, and the `btw_tool_files_*` / `btw_tool_env_*` tools. When an interactive R session is attached they reuse it (live objects, warm `load_all()`, no per-call R startup); with none attached they still work, running in a fresh project-local process. Fall back to `Rscript`/`R CMD` only when the tools are unavailable.
-- Trust but verify the session. A tool call runs either in an attached R session or, if none is attached, in a fresh process launched in the project. If a result does not match the current project (wrong package versions, unexpected files or objects), a session from another project is attached: call `list_r_sessions`, then `select_r_session` the one whose directory matches. See `references/btw-mcp.md` for the full procedure, the renv implications, and how to register the right session when you need live state.
-- To pick up code changes, use `devtools::load_all()` (or `btw_tool_pkg_load_all`); never `R CMD INSTALL` / `install.packages()` the package under development just to test an edit.
-- Work the tight loop: edit, `load_all()`, run the narrowest relevant test (`btw_tool_pkg_test` with a `filter`, or `testthat::test_file()`), and only widen scope once it passes. Reserve the slow full `devtools::check()` (`btw_tool_pkg_check`) for pre-release or when you need CRAN-like validation, not for every change.
+- Run the development commands with `Rscript -e '...'` from the shell, in the package's directory so the project `.Rprofile` (and, for an renv project, its library) is picked up. Keep each call cheap by scoping it tightly rather than by keeping state warm across calls.
+- To pick up code changes, use `devtools::load_all()`; never `R CMD INSTALL` / `install.packages()` the package under development just to test an edit.
+- Work the tight loop: edit, `load_all()`, run the narrowest relevant test (`testthat::test_file()`, or `devtools::test(filter = "...")`), and only widen scope once it passes. Reserve the slow full `devtools::check()` for pre-release or when you need CRAN-like validation, not for every change.
+- Prefer one `Rscript -e '...'` call that chains the steps you need (for example `devtools::load_all(); testthat::test_file("tests/testthat/test-foo.R")`) over several separate calls, so a single R startup covers the whole step instead of paying it per command.
 - Commit at a point where the whole suite is green: `git commit` runs the full `devtools::test()` suite and blocks if anything fails, so reach a green stopping point before committing rather than committing mid-break.
 - `git push` runs `R CMD check` and blocks on any error, so expect the push to take a few minutes and make sure the package checks cleanly before pushing.
-- Run `devtools::document()` (`btw_tool_pkg_document`) after editing roxygen comments or changing `@export`/`@import` tags, before running tests or check, so `man/` and `NAMESPACE` are current.
+- Run `devtools::document()` after editing roxygen comments or changing `@export`/`@import` tags, before running tests or check, so `man/` and `NAMESPACE` are current.
 
 ## General
 

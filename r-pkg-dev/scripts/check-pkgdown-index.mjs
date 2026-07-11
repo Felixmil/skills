@@ -7,8 +7,7 @@
 // so the mistake is fixed before moving on.
 //
 // Triggers (decided in tool_name / tool_input on stdin):
-//   - devtools::document() ran         (Bash command containing "document(",
-//                                        or the r-btw MCP document tool)
+//   - devtools::document() ran         (Bash command containing "document(")
 //   - _pkgdown.yml was edited/written  (Edit/Write/MultiEdit of _pkgdown.yml)
 //
 // NAMESPACE is intentionally NOT a trigger: it is never hand-edited (it is
@@ -43,9 +42,6 @@ switch (tool) {
   case "Bash":
     // devtools::document() / roxygen2::roxygenise() run from a shell.
     if (/document\(|roxygenise\(|roxygenize\(/.test(cmd)) trigger = true;
-    break;
-  case "mcp__r-btw__btw_tool_pkg_document":
-    trigger = true;
     break;
   case "Edit":
   case "Write":

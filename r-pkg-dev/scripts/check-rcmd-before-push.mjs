@@ -95,8 +95,8 @@ if (status !== 0) {
       "",
       out.trimEnd(),
       "",
-      "Fix the R CMD check errors (run devtools::check() or the r-btw",
-      "btw_tool_pkg_check tool to reproduce), then push again.",
+      "Fix the R CMD check errors (run devtools::check() to reproduce),",
+      "then push again.",
     ].join("\n"),
   );
 }

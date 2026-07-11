@@ -89,9 +89,8 @@ if (!hasBackref) {
       `roxygen docs may be missing for ${relR}:`,
       "",
       "This file has roxygen comments but no man/*.Rd page references it, so its",
-      "documentation has not been generated yet. Run devtools::document() (prefer",
-      "the r-btw tool btw_tool_pkg_document if available) to create the .Rd and",
-      "update NAMESPACE.",
+      "documentation has not been generated yet. Run devtools::document() to",
+      "create the .Rd and update NAMESPACE.",
     ].join("\n"),
   );
 }
@@ -113,8 +112,7 @@ if (status !== 0) {
       "roxygen documentation is out of date (roxygen2::needs_roxygenize() reported stale man pages):",
       "",
       out.trim() ? `${out.trim()}\n` : "",
-      "Run devtools::document() (prefer the r-btw tool btw_tool_pkg_document if",
-      "available) to regenerate man/ and NAMESPACE, then continue.",
+      "Run devtools::document() to regenerate man/ and NAMESPACE, then continue.",
     ]
       .filter((line, i, arr) => !(line === "" && arr[i - 1] === ""))
       .join("\n"),

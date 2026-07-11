@@ -54,7 +54,7 @@
         ]
       },
       {
-        "matcher": "Bash|Edit|Write|MultiEdit|mcp__r-btw__btw_tool_pkg_document",
+        "matcher": "Bash|Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
