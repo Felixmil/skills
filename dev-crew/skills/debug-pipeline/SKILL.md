@@ -68,7 +68,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/references/pipeline/build-phase.md`. Delta: the bu
 
 ## Modes
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/pipeline/modes.md`. The investigate approval gate has one extra branch over the others: on an early-exit verdict (`not-a-bug`/`cannot-reproduce`/`works-as-intended`), `approve` confirms the early exit and advances to the terminal `not-a-bug`, while `revise` re-runs the investigator for a deeper look. On a `bug-confirmed` verdict it behaves like the spec gate.
+Follow `${CLAUDE_PLUGIN_ROOT}/references/pipeline/modes.md`, including its "Summarising the deliverable at a manual gate" step: at every `manual` gate summarise the artifact you just read back and link it by its **absolute filesystem path** (`<root>/<issue>/<phase>.md`, the file-delivery link form). The investigate phase's artifact is `investigation.md`; a bug-confirmed summary states the root cause and the proposed regression test. The investigate approval gate has one extra branch over the others: on an early-exit verdict (`not-a-bug`/`cannot-reproduce`/`works-as-intended`), `approve` confirms the early exit and advances to the terminal `not-a-bug`, while `revise` re-runs the investigator for a deeper look. On a `bug-confirmed` verdict it behaves like the spec gate. (The early-exit finding is already surfaced inline per the investigate-phase specifics; the gate summary in `manual` mode is the same finding, folded into the gate question with the `investigation.md` path.)
 
 ## The status list
 
