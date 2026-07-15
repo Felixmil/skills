@@ -1,13 +1,17 @@
 ---
 name: r-conventions
-description: R package development conventions covering R code, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. Use whenever working in an R package, that is, when editing or creating .R, .Rmd, or .qmd files, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or when running R tests or R CMD check.
+description: R development conventions covering R code style, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. MUST be loaded for any R work, in a package or a plain R project. Load it as soon as the session opens, edits, or creates any .R, .r, .Rmd, or .qmd file, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or runs R code, R tests, or R CMD check. When in doubt whether the work is R, load it. Package-only rules (DESCRIPTION/NAMESPACE/NEWS/roxygen/pkgdown/lifecycle) are marked inside; the code-style and testing rules apply to all R code.
 ---
 
-# R package development conventions
+# R development conventions
 
-Apply these whenever the current work touches an R package, not only when asked.
+Apply these whenever the current work touches R, not only when asked.
+
+Scope: two sections, **Code style** and **Formatting**, are universal, they apply to any R code, in a package or a plain project (analysis scripts, a Quarto/RMarkdown project, loose `.R` files). The **Testing** section applies whenever tests exist. Everything else assumes an R *package* (a `DESCRIPTION` file) and is inert in a non-package project: the rules under **R code (below `R/`)**, **Dependencies**, **Documentation**, **Data**, **Running tests and R CMD check**, **Lifecycle**, and **License**. When there is no `DESCRIPTION`, follow only the universal and testing rules.
 
 ## R code (below `R/`)
+
+*Package-only: these govern code under a package's `R/` directory.*
 
 A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cross-package `:::`, `setwd()`, `.First.lib`/`.Last.lib`, writing to `~`, bare `T`/`F`); the rest are by hand.
 
@@ -15,7 +19,6 @@ A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cro
 - Default to `pkg::fun()`. Import into `NAMESPACE` (`@importFrom`) only for operators, heavy use, or tight loops where `::` lookup cost matters.
 - Never `:::` into another package (fails `R CMD check`); `::` for exported, same-package `mypkg:::internal()` is fine.
 - Guard every `Suggests` use with `rlang::check_installed()`, `rlang::is_installed()`, or `requireNamespace("pkg", quietly = TRUE)`.
-- Use `TRUE`/`FALSE`, never `T`/`F` (they can be rebound).
 - `.R` files are almost entirely function definitions. Top-level code running at build time (`Sys.time()`, `system.file()`, `options()`, caching, aliasing `foo <- pkg::blah`) is a bug; move it inside a function.
 - `.onLoad`/`.onAttach`/`.onUnload` go in `R/zzz.R`. S3 registration and `library.dynam()` in `.onLoad`; startup text in `.onAttach` via `packageStartupMessage()` (never bare `message()`); cleanup in `.onUnload`. `.First.lib`/`.Last.lib` forbidden.
 - Hold mutable state in a top-level internal environment (`R/aaa.R`): `the <- new.env(parent = emptyenv())`. Never `<<-` to rebind a namespace object (bindings are locked).
@@ -25,11 +28,16 @@ A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cro
 
 ## Code style
 
+*Universal: applies to all R code, package or not.*
+
 - Base pipe `|>`, not `%>%`.
+- Use `TRUE`/`FALSE`, never `T`/`F` (they can be rebound).
 - `\() ...` for single-line anonymous functions; `function() {...}` for multi-line.
 - Order a file's definitions exported-first, then the internal/helper functions (`@keywords internal`, unexported, `.`-prefixed) that support them.
 
 ## Formatting
+
+*Universal: applies to all R code, package or not.*
 
 - `.R` files are auto-formatted with [Air](https://posit-dev.github.io/air/) via a `PostToolUse` hook, so no manual `air format` is needed. Air does not support `.qmd`/`.Rmd`.
 - Code-section syntax:
@@ -66,6 +74,8 @@ A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cro
 - Tidyverse structure (https://style.tidyverse.org/news.html): one line per bullet, present tense, positive framing; backtick every function/argument/file (functions with `()`); credit and link issues before the final period, e.g. `(@user, #123)`. Version is an `# pkg 1.2.3` heading; large releases group under `## Breaking changes` / `## New features` / `## Minor improvements and fixes`, breaking first.
 
 ## Testing
+
+*Applies wherever tests exist. The testthat idioms are universal; `test_path()`, the `R/`<->`tests/testthat/` mirroring, and `tests/testthat.R` assume a package layout.*
 
 Conventions for *writing* tests; for running them and R CMD check, see "Running tests and R CMD check".
 
@@ -124,8 +134,9 @@ Tight loop, widening scope only once the narrower run passes (full `devtools::ch
 
 ### Commit and push gates
 
-- Commit green: `git commit` runs the full `devtools::test()` and blocks on any failure, so reach a green point first.
-- Check clean before pushing: `git push` runs `R CMD check` and blocks on any error. Run `devtools::check()` yourself first (a few minutes) rather than hitting it at the gate.
+- Commit green: `git commit` runs the full `devtools::test()` and blocks on any failure, so reach a green point first. The gate skips automatically when the commit touches no R-relevant file, is a message-only `--amend`, or is empty.
+- Check clean before pushing: `git push` runs `R CMD check` and blocks on any error. Run `devtools::check()` yourself first (a few minutes) rather than hitting it at the gate. The gate skips automatically when the push ships no R-relevant change (docs-only commits, a branch-delete, nothing to push).
+- Escape hatch, for genuine need only (e.g. a WIP checkpoint you will fix before it matters): prefix the command with `R_PKG_GATE_SKIP=1` to bypass that one gate, e.g. `R_PKG_GATE_SKIP=1 git commit -m "wip"`. The bypass is printed to stderr; do not use it to paper over a red suite or a failing check.
 
 ## Where to look for information
 

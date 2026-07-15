@@ -13,9 +13,23 @@
 // The gate runs regardless of git flags (e.g. `git push --force`); a human
 // pushing from a terminal is unaffected (that is not a Claude tool call).
 //
-// No-op (allows the push) when the gate does not apply: the command is not a real
-// `git push`, the working directory is not inside an R package, or
-// Rscript/devtools are unavailable.
+// Deliberate escape hatch: prefixing the command with the env var
+// `R_PKG_GATE_SKIP=1` (e.g. `R_PKG_GATE_SKIP=1 git push`) bypasses this gate for
+// that one push. It is detected from the command string (the var is set inline
+// on git, so it is not in the hook's own environment) and announced on stderr,
+// so a bypass is always a conscious, visible choice.
+//
+// No-op (allows the push) when the gate does not apply: the command is not a
+// real `git push`, the working directory is not inside an R package, or
+// Rscript/devtools are unavailable. It also skips pushes that cannot ship an
+// R-relevant change, decided from a cheap `git diff @{push}..HEAD`:
+//   - a branch deletion (no package files shipped),
+//   - the pushed commits touch no R-relevant file (only docs, CI config, etc.;
+//     see isRRelevantPath),
+//   - nothing to push (already up to date; this also covers a pure `--tags`
+//     push when the branch has no new commits).
+// When git cannot resolve what is being pushed (new branch with no upstream, an
+// explicit refspec, detached HEAD), the gate runs rather than guess.
 //
 // Wired up via a PreToolUse hook in this plugin's hooks/hooks.json.
 
@@ -24,6 +38,9 @@ import {
   cwd as payloadCwd,
   onPath,
   run,
+  git,
+  gateBypassed,
+  isRRelevantPath,
   findUp,
   block,
   existsSync,
@@ -46,6 +63,15 @@ if (!/(^|[;&|\s])git(\s+-[^;&|]*)?\s+push(\s|$)/.test(cmd)) process.exit(0);
 // A push that would not actually publish anything is not worth gating.
 if (/\s(--help|-h|--dry-run)(\s|$)/.test(cmd)) process.exit(0);
 
+// Deliberate escape hatch: `R_PKG_GATE_SKIP=1 git push ...` bypasses the gate
+// for this one push. Announced loudly so the bypass is never silent.
+if (gateBypassed(cmd)) {
+  process.stderr.write(
+    "r-pkg-dev: push gate bypassed via R_PKG_GATE_SKIP (R CMD check NOT run).\n",
+  );
+  process.exit(0);
+}
+
 // Find the package root: nearest directory at/above CWD with a DESCRIPTION.
 const pkgRoot = findUp(cwd, (dir) => existsSync(join(dir, "DESCRIPTION")));
 if (!pkgRoot) process.exit(0);
@@ -53,6 +79,45 @@ if (!pkgRoot) process.exit(0);
 // Must actually be an R package (DESCRIPTION with a Package: field).
 if (!/^Package:\s*[A-Za-z]/m.test(safeRead(join(pkgRoot, "DESCRIPTION"))))
   process.exit(0);
+
+// Skip the check when this push cannot ship an R-relevant change. Decided from
+// a cheap git range diff before probing for Rscript/devtools. Conservative:
+// only skip when we can prove the push is irrelevant or a no-op; whenever git
+// cannot resolve what is being pushed, run the gate.
+{
+  // A branch deletion ships no package files. (`--tags` is intentionally not a
+  // shortcut here: `git push --tags` can still carry unpushed branch commits, so
+  // it is left to the range diff below, which skips only when the branch has no
+  // new commits.)
+  const deletesOnly = /\s--delete(\s|$)/.test(cmd) || /\s:[^\s]+/.test(cmd);
+  if (deletesOnly) process.exit(0);
+
+  // The commits being pushed: prefer the tracking-branch push target
+  // (`@{push}`), fall back to the configured upstream (`@{upstream}`). Both
+  // resolve to the remote-tracking ref, so `<ref>..HEAD` is exactly the commits
+  // this push would publish. When neither resolves (new branch with no
+  // upstream, an explicit refspec, detached HEAD), `range` stays "" and we run
+  // the gate rather than guess.
+  let range = "";
+  if (git(cwd, ["rev-parse", "--abbrev-ref", "@{push}"]).status === 0) {
+    range = "@{push}..HEAD";
+  } else if (git(cwd, ["rev-parse", "--abbrev-ref", "@{upstream}"]).status === 0) {
+    range = "@{upstream}..HEAD";
+  }
+
+  if (range) {
+    const diff = git(cwd, ["diff", "--name-only", range]);
+    if (diff.status === 0) {
+      const files = diff.out
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      // Nothing to push (already up to date), or nothing R-relevant -> skip.
+      if (files.length === 0) process.exit(0);
+      if (!files.some(isRRelevantPath)) process.exit(0);
+    }
+  }
+}
 
 if (!onPath("Rscript")) process.exit(0);
 if (

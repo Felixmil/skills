@@ -89,4 +89,57 @@ export function allow() {
   process.exit(0);
 }
 
+// Run git in `cwd` and return { out, status }, mirroring run(). Never throws:
+// a spawn failure yields status 1 so callers can decide. Used by the
+// commit/push gates to inspect what a commit/push would actually touch.
+export function git(cwd, args) {
+  return run("git", args, { cwd });
+}
+
+// Deliberate escape hatch for the commit/push gates: setting the env var
+// R_PKG_GATE_SKIP to a truthy value bypasses the gate for that one command. It
+// is read from the command STRING (not process.env) because it is set inline on
+// the git invocation (`R_PKG_GATE_SKIP=1 git commit ...`), so it lives in git's
+// environment, not the hook's. Truthy = anything but empty / 0 / false / no.
+// Deliberately awkward to type and printed loudly by the caller, so it is a
+// conscious choice, never a reflex. Matched anywhere in the command (like the
+// gates' coarse `git commit`/`git push` matching), so a commit message that
+// literally contains `R_PKG_GATE_SKIP=1` would also trip it; that is a non-issue
+// in practice and avoids parsing shell word positions.
+export function gateBypassed(cmd) {
+  const m = /(^|[;&|\s])R_PKG_GATE_SKIP=(["']?)([^\s"';&|]*)\2(\s|$)/.exec(
+    cmd || "",
+  );
+  if (!m) return false;
+  const val = m[3];
+  return !/^(|0|false|no)$/i.test(val);
+}
+
+// Whether a repo-relative path is "R-relevant": changing it can change what the
+// test suite or R CMD check sees. Anything else (docs, CI config, .github/,
+// LICENSE, .Rbuildignore, .gitignore, etc.) cannot, so a commit/push touching
+// only such files is safe to let through without running the expensive R gate.
+//
+// Deliberately broad on the include side: source and tests (.R/.r/.Rmd/.qmd/
+// .Rnw), package metadata (DESCRIPTION, NAMESPACE), the `_pkgdown.yml` config,
+// and the package subdirectories R CMD check reads (src/, inst/, vignettes/,
+// data/, data-raw/, po/, tests/, man/, pkgdown/). When in doubt a path is
+// treated as relevant, so the gate errs toward running, never toward skipping a
+// real check.
+export function isRRelevantPath(path) {
+  const p = path.replace(/\\/g, "/");
+  const base = p.slice(p.lastIndexOf("/") + 1);
+  if (/\.(R|r|Rmd|rmd|qmd|Rnw|rnw)$/.test(base)) return true;
+  if (base === "DESCRIPTION" || base === "NAMESPACE") return true;
+  if (base === "_pkgdown.yml" || base === "_pkgdown.yaml") return true;
+  // A leading directory segment that R CMD check / testthat reads. Matches the
+  // segment at the repo root ("R/foo") or nested under a package subdir in a
+  // monorepo ("pkg/R/foo").
+  if (
+    /(^|\/)(R|src|inst|vignettes|data|data-raw|po|tests|man|pkgdown)\//.test(p)
+  )
+    return true;
+  return false;
+}
+
 export { existsSync, readFileSync, join, basename, dirname };
