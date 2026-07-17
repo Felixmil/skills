@@ -46,6 +46,7 @@ A guardrail hook enforces some of these (`library()`/`require()`/`source()`, cro
   # Section Two ====
   ### Section Three ####
   ```
+- Never hard-wrap prose at a fixed column in `.Rmd`/`.qmd` files: write each paragraph as one continuous line and let the editor soft-wrap, exactly as for any prose Markdown. A mid-paragraph newline renders as a literal line break. Two things are *not* covered by this and keep their own rule: roxygen comments in `.R` do wrap at 80 characters (see Documentation), and `NEWS.md` bullets are single-line by the `NEWS.md` rule.
 
 ## Dependencies (`DESCRIPTION`)
 
