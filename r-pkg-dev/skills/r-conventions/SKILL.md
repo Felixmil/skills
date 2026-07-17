@@ -1,6 +1,6 @@
 ---
 name: r-conventions
-description: R development conventions covering R code style, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. MUST be loaded for any R work, in a package or a plain R project. Load it as soon as the session opens, edits, or creates any .R, .r, .Rmd, or .qmd file, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or runs R code, R tests, or R CMD check. When in doubt whether the work is R, load it. Package-only rules (DESCRIPTION/NAMESPACE/NEWS/roxygen/pkgdown/lifecycle) are marked inside; the code-style and testing rules apply to all R code.
+description: R development conventions covering R code style, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. MUST be loaded for any R work, in a package or a plain R project. Load it as soon as the session opens, edits, creates, or reviews any .R, .r, .Rmd, or .qmd file, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or runs R code, R tests, or R CMD check. Also load it when reviewing or critiquing R code (a diff, a pull request, or a snippet). When in doubt whether the work is R, load it. Package-only rules (DESCRIPTION/NAMESPACE/NEWS/roxygen/pkgdown/lifecycle) are marked inside; the code-style and testing rules apply to all R code.
 ---
 
 # R development conventions
