@@ -16,6 +16,16 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-before-commit.mjs\"",
+            "statusMessage": "roxygen docs gate (pre-commit)"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.mjs\"",
             "statusMessage": "R CMD check gate (pre-push)"
           }
@@ -40,16 +50,6 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-r-code.mjs\"",
             "statusMessage": "R code guardrail"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-docs.mjs\"",
-            "statusMessage": "roxygen docs check"
           }
         ]
       },

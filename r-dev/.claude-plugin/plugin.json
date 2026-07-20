@@ -1,0 +1,19 @@
+{
+  "name": "r-dev",
+  "description": "R package development conventions and guardrail hooks, packaged for per-project reuse. Ships an r-pkg-dev skill (R code style, dependencies, testing, documentation, lifecycle, plus agent-workflow efficiency guidance; the code-style and testing rules apply to any R work, the rest to packages) and guardrail hooks (air-format, R-code anti-patterns, pkgdown index, a full-test-suite gate and a roxygen-docs staleness gate before commit, and an R CMD check gate before push; the commit/push gates skip changes with no R-relevant content, and can be bypassed on demand with R_PKG_GATE_SKIP=1).",
+  "version": "0.4.0",
+  "author": {
+    "name": "Felix Mil"
+  },
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "r-package",
+    "devtools",
+    "testthat",
+    "roxygen",
+    "pkgdown",
+    "conventions",
+    "guardrails"
+  ]
+}

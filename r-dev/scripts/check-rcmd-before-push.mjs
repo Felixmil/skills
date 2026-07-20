@@ -67,7 +67,7 @@ if (/\s(--help|-h|--dry-run)(\s|$)/.test(cmd)) process.exit(0);
 // for this one push. Announced loudly so the bypass is never silent.
 if (gateBypassed(cmd)) {
   process.stderr.write(
-    "r-pkg-dev: push gate bypassed via R_PKG_GATE_SKIP (R CMD check NOT run).\n",
+    "r-dev: push gate bypassed via R_PKG_GATE_SKIP (R CMD check NOT run).\n",
   );
   process.exit(0);
 }
@@ -129,7 +129,7 @@ if (
   process.exit(0);
 
 process.stderr.write(
-  "Running R CMD check before push (r-pkg-dev gate). This can take a few minutes...\n",
+  "Running R CMD check before push (r-dev gate). This can take a few minutes...\n",
 );
 
 // Run the check quietly and inspect the result object. devtools::check() returns

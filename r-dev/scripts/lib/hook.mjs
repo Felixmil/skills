@@ -1,4 +1,4 @@
-// Shared helpers for the r-pkg-dev guardrail hooks.
+// Shared helpers for the r-dev guardrail hooks.
 //
 // The hooks are Node scripts (not shell) so they run identically on macOS,
 // Linux, and native Windows: Claude Code ships Node on every platform, whereas

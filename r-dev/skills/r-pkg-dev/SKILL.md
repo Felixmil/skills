@@ -1,5 +1,5 @@
 ---
-name: r-conventions
+name: r-pkg-dev
 description: R development conventions covering R code style, dependencies, DESCRIPTION, data, testing, documentation (NEWS.md, roxygen, pkgdown), lifecycle, and license. MUST be loaded for any R work, in a package or a plain R project. Load it as soon as the session opens, edits, creates, or reviews any .R, .r, .Rmd, or .qmd file, DESCRIPTION, NAMESPACE, NEWS.md, or _pkgdown.yml, or runs R code, R tests, or R CMD check. Also load it when reviewing or critiquing R code (a diff, a pull request, or a snippet). When in doubt whether the work is R, load it. Package-only rules (DESCRIPTION/NAMESPACE/NEWS/roxygen/pkgdown/lifecycle) are marked inside; the code-style and testing rules apply to all R code.
 ---
 
@@ -136,6 +136,7 @@ Tight loop, widening scope only once the narrower run passes (full `devtools::ch
 ### Commit and push gates
 
 - Commit green: `git commit` runs the full `devtools::test()` and blocks on any failure, so reach a green point first. The gate skips automatically when the commit touches no R-relevant file, is a message-only `--amend`, or is empty.
+- Commit with docs in sync: when the commit touches roxygen sources under `R/`, `git commit` also runs the fast `roxygen2::needs_roxygenize()` and blocks if `man/` is out of date, so run `devtools::document()` before committing changed roxygen or `@export`/`@import`. This is checked once at commit time, not on every edit, so editing freely mid-task is fine.
 - Check clean before pushing: `git push` runs `R CMD check` and blocks on any error. Run `devtools::check()` yourself first (a few minutes) rather than hitting it at the gate. The gate skips automatically when the push ships no R-relevant change (docs-only commits, a branch-delete, nothing to push).
 - Escape hatch, for genuine need only (e.g. a WIP checkpoint you will fix before it matters): prefix the command with `R_PKG_GATE_SKIP=1` to bypass that one gate, e.g. `R_PKG_GATE_SKIP=1 git commit -m "wip"`. The bypass is printed to stderr; do not use it to paper over a red suite or a failing check.
 
