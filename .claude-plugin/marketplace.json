@@ -5,8 +5,8 @@
   },
   "plugins": [
     {
-      "name": "r-pkg-dev",
-      "source": "./r-pkg-dev",
+      "name": "r-dev",
+      "source": "./r-dev",
       "description": "R package development conventions, guardrail hooks, and the r-btw MCP server, packaged for per-project reuse."
     },
     {

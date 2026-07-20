@@ -4,7 +4,7 @@
 // and blocks (exit 2) if any test fails, so broken code never enters history.
 //
 // Why commit (not every edit, not every push): the tight edit/test loop during
-// implementation runs only the relevant test files (see the r-conventions skill's
+// implementation runs only the relevant test files (see the r-pkg-dev skill's
 // Agent workflow); the full suite is reserved for the commit boundary, which is
 // infrequent, so the cost is paid rarely. This closes the case of an agent
 // committing code that did not pass the suite locally.
@@ -67,7 +67,7 @@ if (/\s(--help|-h|--dry-run)(\s|$)/.test(cmd)) process.exit(0);
 // for this one commit. Announced loudly so the bypass is never silent.
 if (gateBypassed(cmd)) {
   process.stderr.write(
-    "r-pkg-dev: commit gate bypassed via R_PKG_GATE_SKIP (test suite NOT run).\n",
+    "r-dev: commit gate bypassed via R_PKG_GATE_SKIP (test suite NOT run).\n",
   );
   process.exit(0);
 }
@@ -147,7 +147,7 @@ if (
   process.exit(0);
 
 process.stderr.write(
-  "Running the full test suite before commit (r-pkg-dev gate)...\n",
+  "Running the full test suite before commit (r-dev gate)...\n",
 );
 
 // Run the suite with NOT_CRAN=true so CRAN-gated tests, snapshots, and skips are
