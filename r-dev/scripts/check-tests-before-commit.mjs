@@ -30,6 +30,13 @@
 // When it does apply it runs the full suite with NOT_CRAN=true, however long
 // that takes.
 //
+// Pass cache: after the suite passes, the fingerprint of the R-relevant content
+// this commit records is stored (see lib/hook.mjs). A later commit whose
+// R-relevant content is byte-identical skips the re-run, so re-committing after
+// fixing something unrelated (a message typo, a failed follow-up command) does
+// not re-run the suite. Only a plain `git commit` is fingerprinted; `-a` and
+// `--amend` commit content the index does not reflect, so they always re-run.
+//
 // Wired up via a PreToolUse hook in this plugin's hooks/hooks.json.
 
 import { readdirSync } from "node:fs";
@@ -46,6 +53,9 @@ import {
   existsSync,
   readFileSync,
   join,
+  cachedPass,
+  recordPass,
+  contentFingerprint,
 } from "./lib/hook.mjs";
 
 const payload = readPayload();
@@ -89,6 +99,9 @@ if (!hasTestFiles(testDir)) process.exit(0);
 // cheap git inspection done before probing for Rscript/devtools, so a docs-only
 // or empty commit costs nothing. The rule is conservative: only skip when we can
 // prove the commit is irrelevant or a no-op; if git cannot answer, run the gate.
+// `fingerprint` is the R-relevant content this commit records (see below); "" if
+// it cannot be computed, in which case the pass cache is not consulted or written.
+let fingerprint = "";
 {
   const amend = /\s--amend(\s|$)/.test(cmd);
   const allowEmpty = /\s--allow-empty(\s|$)/.test(cmd);
@@ -134,6 +147,26 @@ if (!hasTestFiles(testDir)) process.exit(0);
   if (files.length > 0 && !files.some(isRRelevantPath)) {
     process.exit(0);
   }
+
+  // Fingerprint the exact R-relevant content this commit would record, so a
+  // retry of the same commit (identical index) can be skipped once the suite
+  // has passed on it. `git ls-files -s` reports the INDEX blob shas, which is
+  // exactly what a plain `git commit` records. `-a` and `--amend` also commit
+  // working-tree / prior-commit content that the index does not reflect, so we
+  // do not fingerprint those (fingerprint stays "" -> gate always runs, the
+  // safe default). The common repeated `git commit -m ...` is fully covered.
+  if (!stageAll && !amend) {
+    const staged = gitLines(cwd, ["ls-files", "-s"]);
+    if (staged.ok) fingerprint = contentFingerprint(staged.files);
+  }
+}
+
+// Same R-relevant content already passed the suite -> skip the re-run.
+if (fingerprint && cachedPass(pkgRoot, "tests") === fingerprint) {
+  process.stderr.write(
+    "r-dev: test suite gate skipped (identical R content already passed).\n",
+  );
+  process.exit(0);
 }
 
 if (!onPath("Rscript")) process.exit(0);
@@ -147,7 +180,7 @@ if (
   process.exit(0);
 
 process.stderr.write(
-  "Running the full test suite before commit (r-dev gate)...\n",
+  "r-dev gate: running the full test suite before commit. The commit waits until it finishes; results appear below.\n",
 );
 
 // Run the suite with NOT_CRAN=true so CRAN-gated tests, snapshots, and skips are
@@ -184,6 +217,9 @@ if (status !== 0) {
     ].join("\n"),
   );
 }
+
+// Passed: remember this exact R content so a re-run of the same commit skips it.
+if (fingerprint) recordPass(pkgRoot, "tests", fingerprint);
 
 process.exit(0);
 

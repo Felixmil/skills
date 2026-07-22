@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-tests-before-commit.mjs\"",
-            "statusMessage": "test suite gate (pre-commit)"
+            "statusMessage": "r-dev gate: running full test suite before commit (the commit waits for it)"
           }
         ]
       },
@@ -17,7 +17,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-before-commit.mjs\"",
-            "statusMessage": "roxygen docs gate (pre-commit)"
+            "statusMessage": "r-dev gate: checking roxygen docs are up to date before commit"
           }
         ]
       },
@@ -27,7 +27,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.mjs\"",
-            "statusMessage": "R CMD check gate (pre-push)"
+            "statusMessage": "r-dev gate: running R CMD check before push (can take a few minutes; the push waits for it)"
           }
         ]
       }

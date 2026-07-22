@@ -31,6 +31,12 @@
 // When git cannot resolve what is being pushed (new branch with no upstream, an
 // explicit refspec, detached HEAD), the gate runs rather than guess.
 //
+// Pass cache: after the check passes, the fingerprint of HEAD's R-relevant
+// content is stored (see lib/hook.mjs). A later push whose HEAD ships
+// byte-identical R content skips the re-run, so a re-push after a failed
+// follow-up (a rejected `gh pr create`, a retried push) does not re-run the
+// minutes-long check. New commits change HEAD's tree, so the check runs again.
+//
 // Wired up via a PreToolUse hook in this plugin's hooks/hooks.json.
 
 import {
@@ -46,6 +52,9 @@ import {
   existsSync,
   readFileSync,
   join,
+  cachedPass,
+  recordPass,
+  contentFingerprint,
 } from "./lib/hook.mjs";
 
 const payload = readPayload();
@@ -119,6 +128,31 @@ if (!/^Package:\s*[A-Za-z]/m.test(safeRead(join(pkgRoot, "DESCRIPTION"))))
   }
 }
 
+// Fingerprint the R-relevant content that a push would ship. R CMD check reads
+// the whole package tree, so the fingerprint is HEAD's R-relevant blobs
+// (`git ls-tree -r HEAD`), not just the pushed range: two pushes with the same
+// HEAD (e.g. a re-push after a failed `gh pr create`) ship identical content and
+// must not re-run the minutes-long check. New commits change HEAD's tree, so the
+// fingerprint differs and the check runs again. "" (detached HEAD, unborn branch)
+// means "do not consult the cache" -> the check runs, the safe default.
+let fingerprint = "";
+{
+  const tree = git(cwd, ["ls-tree", "-r", "HEAD"]);
+  if (tree.status === 0) {
+    fingerprint = contentFingerprint(
+      tree.out.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+    );
+  }
+}
+
+// Same R-relevant content already passed R CMD check -> skip the re-run.
+if (fingerprint && cachedPass(pkgRoot, "rcmd") === fingerprint) {
+  process.stderr.write(
+    "r-dev: R CMD check gate skipped (identical R content already passed). Pushing.\n",
+  );
+  process.exit(0);
+}
+
 if (!onPath("Rscript")) process.exit(0);
 if (
   run("Rscript", [
@@ -129,7 +163,7 @@ if (
   process.exit(0);
 
 process.stderr.write(
-  "Running R CMD check before push (r-dev gate). This can take a few minutes...\n",
+  "r-dev gate: running R CMD check before push. This can take a few minutes; the push waits until it finishes...\n",
 );
 
 // Run the check quietly and inspect the result object. devtools::check() returns
@@ -166,7 +200,11 @@ if (status !== 0) {
   );
 }
 
-// Surface warnings/notes without blocking, so they are visible but not a gate.
+// Passed (no errors): remember this exact R content so a re-push of the same
+// HEAD skips the check.
+if (fingerprint) recordPass(pkgRoot, "rcmd", fingerprint);
+
+// Surface the result (warning/note counts) without blocking.
 if (out.trim()) process.stderr.write(`${out.trimEnd()}\n`);
 
 process.exit(0);
