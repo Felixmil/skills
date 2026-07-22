@@ -7,8 +7,15 @@
 // hardcoded path separators).
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+} from "node:fs";
 import { dirname, join, basename } from "node:path";
+import { homedir } from "node:os";
+import { createHash } from "node:crypto";
 
 // Read the whole hook payload from stdin and parse it as JSON. Returns {} when
 // stdin is empty or not valid JSON, so a malformed payload degrades to a no-op
@@ -140,6 +147,86 @@ export function isRRelevantPath(path) {
   )
     return true;
   return false;
+}
+
+// --- Pass cache -------------------------------------------------------------
+//
+// The two expensive gates (full test suite pre-commit, R CMD check pre-push)
+// run every time a commit/push is attempted, even when an agent re-runs the
+// same commit/push after fixing something UNRELATED to the R code (a typo in
+// the commit message, a failed `gh pr create`, a retried push). Re-running a
+// minutes-long check on byte-identical content wastes time and adds nothing.
+//
+// This cache records the fingerprint of the R-relevant content that last PASSED
+// each gate, per repository. On a later run, if the fingerprint is identical,
+// the gate is skipped: the exact same content already passed. Any change to an
+// R-relevant file changes the fingerprint, so the gate runs again.
+//
+// The cache file belongs to the r-dev plugin and lives under the user's Claude
+// home (`~/.claude/r-dev/gate-cache.json`), a directory Claude can always
+// write. It is a single JSON object keyed by repo root, so many repos share one
+// file safely:
+//   { "/abs/repo": { "tests": "<sha>", "rcmd": "<sha>" }, ... }
+// A missing/corrupt file degrades to "no cached pass" (the gate runs), so the
+// cache can never cause a check to be wrongly skipped.
+
+function cacheFile() {
+  return join(homedir(), ".claude", "r-dev", "gate-cache.json");
+}
+
+function readCache() {
+  try {
+    return JSON.parse(readFileSync(cacheFile(), "utf8")) || {};
+  } catch {
+    return {};
+  }
+}
+
+// The fingerprint stored for `gate` (e.g. "tests", "rcmd") in `repoRoot`, or ""
+// when there is no recorded pass. Compare against a freshly computed fingerprint
+// to decide whether the identical content already passed.
+export function cachedPass(repoRoot, gate) {
+  const entry = readCache()[repoRoot];
+  return (entry && entry[gate]) || "";
+}
+
+// Record that `fingerprint` passed `gate` in `repoRoot`. Best effort: any write
+// failure is swallowed, since a missing record only means the gate runs next
+// time (never that it is wrongly skipped).
+export function recordPass(repoRoot, gate, fingerprint) {
+  try {
+    const cache = readCache();
+    cache[repoRoot] = { ...(cache[repoRoot] || {}), [gate]: fingerprint };
+    mkdirSync(dirname(cacheFile()), { recursive: true });
+    writeFileSync(cacheFile(), `${JSON.stringify(cache, null, 2)}\n`);
+  } catch {
+    // ignore
+  }
+}
+
+// A content fingerprint of the R-relevant `path -> blob-sha` pairs in `lines`,
+// each line being git plumbing output ("<mode> <sha> <stage>\tpath" from
+// `ls-files -s`, or "<mode> <type> <sha>\tpath" from `ls-tree -r`). Only the
+// path and blob sha matter, so both formats reduce to the same fingerprint when
+// the tracked content is identical. The blob sha sits in a different column in
+// the two formats (field 1 for ls-files -s, field 2 for ls-tree -r), so it is
+// found by shape: the 40-hex-char (or 64 for sha256 repos) object id, not by
+// position. Returns "" when nothing R-relevant is present (caller then does not
+// cache).
+export function contentFingerprint(lines) {
+  const parts = [];
+  for (const line of lines) {
+    const tab = line.indexOf("\t");
+    if (tab < 0) continue;
+    const path = line.slice(tab + 1).trim();
+    if (!path || !isRRelevantPath(path)) continue;
+    const fields = line.slice(0, tab).trim().split(/\s+/);
+    const sha = fields.find((f) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(f));
+    if (!sha) continue;
+    parts.push(`${sha} ${path}`);
+  }
+  if (parts.length === 0) return "";
+  return createHash("sha256").update(parts.sort().join("\n")).digest("hex");
 }
 
 export { existsSync, readFileSync, join, basename, dirname };
