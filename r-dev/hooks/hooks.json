@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-tests-before-commit.mjs\"",
-            "statusMessage": "r-dev gate: running full test suite before commit (the commit waits for it)"
+            "statusMessage": "r-dev gate: running the full test suite before this commit (the commit waits for it)"
           }
         ]
       },
@@ -27,7 +27,7 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.mjs\"",
-            "statusMessage": "r-dev gate: running R CMD check before push (can take a few minutes; the push waits for it)"
+            "statusMessage": "r-dev gate: running R CMD check before this push (can take a few minutes; the push waits for it)"
           }
         ]
       }

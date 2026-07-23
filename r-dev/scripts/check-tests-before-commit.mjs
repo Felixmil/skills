@@ -50,6 +50,7 @@ import {
   isRRelevantPath,
   findUp,
   block,
+  notify,
   existsSync,
   readFileSync,
   join,
@@ -163,8 +164,8 @@ let fingerprint = "";
 
 // Same R-relevant content already passed the suite -> skip the re-run.
 if (fingerprint && cachedPass(pkgRoot, "tests") === fingerprint) {
-  process.stderr.write(
-    "r-dev: test suite gate skipped (identical R content already passed).\n",
+  notify(
+    "r-dev: test suite gate skipped (identical R content already passed). Commit proceeding.",
   );
   process.exit(0);
 }
@@ -199,6 +200,8 @@ const { out, status } = run(
   df <- as.data.frame(res)
   n_fail <- sum(df$failed) + sum(df$error)
   if (n_fail > 0) quit(status = 1L)
+  n_pass <- sum(df$passed)
+  cat(sprintf("R_DEV_PASS_COUNT=%d\\n", n_pass))
 `,
   ],
   { cwd: pkgRoot, env: { NOT_CRAN: "true" } },
@@ -220,6 +223,15 @@ if (status !== 0) {
 
 // Passed: remember this exact R content so a re-run of the same commit skips it.
 if (fingerprint) recordPass(pkgRoot, "tests", fingerprint);
+
+// Announce the pass to the user (stderr is hidden on exit 0). The R snippet
+// prints "R_DEV_PASS_COUNT=<n>" on success; fold it into the message if present.
+const passMatch = /R_DEV_PASS_COUNT=(\d+)/.exec(out);
+notify(
+  passMatch
+    ? `r-dev: test suite passed (${passMatch[1]} tests). Commit proceeding.`
+    : "r-dev: test suite passed. Commit proceeding.",
+);
 
 process.exit(0);
 

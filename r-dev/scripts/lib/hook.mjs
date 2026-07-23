@@ -96,6 +96,14 @@ export function allow() {
   process.exit(0);
 }
 
+// Surface a one-line status to the user on an allow (exit 0) path. A PreToolUse
+// hook's stderr is hidden when it exits 0 (it goes only to the debug log), so a
+// plain stderr write is invisible on success. A JSON object with a systemMessage
+// field on stdout IS shown to the user. Callers still exit 0 themselves after.
+export function notify(message) {
+  process.stdout.write(`${JSON.stringify({ systemMessage: message })}\n`);
+}
+
 // Run git in `cwd` and return { out, status }, mirroring run(). Never throws:
 // a spawn failure yields status 1 so callers can decide. Used by the
 // commit/push gates to inspect what a commit/push would actually touch.

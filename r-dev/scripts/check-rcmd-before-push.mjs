@@ -49,6 +49,7 @@ import {
   isRRelevantPath,
   findUp,
   block,
+  notify,
   existsSync,
   readFileSync,
   join,
@@ -147,8 +148,8 @@ let fingerprint = "";
 
 // Same R-relevant content already passed R CMD check -> skip the re-run.
 if (fingerprint && cachedPass(pkgRoot, "rcmd") === fingerprint) {
-  process.stderr.write(
-    "r-dev: R CMD check gate skipped (identical R content already passed). Pushing.\n",
+  notify(
+    "r-dev: R CMD check gate skipped (identical R content already passed). Push proceeding.",
   );
   process.exit(0);
 }
@@ -204,8 +205,13 @@ if (status !== 0) {
 // HEAD skips the check.
 if (fingerprint) recordPass(pkgRoot, "rcmd", fingerprint);
 
-// Surface the result (warning/note counts) without blocking.
-if (out.trim()) process.stderr.write(`${out.trimEnd()}\n`);
+// Announce the pass to the user (stderr is hidden on exit 0). `out` holds the
+// "R CMD check: N error(s), N warning(s), N note(s)." line; surface it verbatim.
+notify(
+  out.trim()
+    ? `r-dev: R CMD check passed. ${out.trim()} Push proceeding.`
+    : "r-dev: R CMD check passed. Push proceeding.",
+);
 
 process.exit(0);
 
