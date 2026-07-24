@@ -6,16 +6,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-tests-before-commit.mjs\"",
-            "statusMessage": "r-dev gate: running the full test suite before this commit (the commit waits for it)"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-roxygen-before-commit.mjs\"",
             "statusMessage": "r-dev gate: checking roxygen docs are up to date before commit"
           }
@@ -26,8 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-rcmd-before-push.mjs\"",
-            "statusMessage": "r-dev gate: running R CMD check before this push (can take a few minutes; the push waits for it)"
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-pkgdown-index.mjs\"",
+            "statusMessage": "r-dev gate: checking the pkgdown reference index is in sync before commit"
           }
         ]
       }
@@ -50,16 +40,6 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-r-code.mjs\"",
             "statusMessage": "R code guardrail"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/check-pkgdown-index.mjs\"",
-            "statusMessage": "pkgdown index check"
           }
         ]
       }

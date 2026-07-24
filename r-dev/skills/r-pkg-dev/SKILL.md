@@ -111,7 +111,7 @@ Run via `Rscript -e '...'` from the package directory (so the project `.Rprofile
 - Run to completion, not to first failure: `devtools::test(stop_on_failure = FALSE)`; `export_all = TRUE` reaches internal functions. The count line is the signal.
 - `devtools::check(error_on = "never")` returns the full report instead of aborting; `manual = FALSE` skips the PDF manual (no LaTeX); add `cran = TRUE` before release.
 
-Tight loop, widening scope only once the narrower run passes (full `devtools::check()` is not part of this loop; it is the push gate below):
+Tight loop, widening scope only once the narrower run passes (full `devtools::check()` is not part of this loop; run it by hand before pushing, see below):
 
 1. One `test_that()`: `testthat::test_file("tests/testthat/test-foo.R", desc = "specific description")`.
 2. Whole file: `testthat::test_file("tests/testthat/test-foo.R")`.
@@ -134,14 +134,16 @@ Tight loop, widening scope only once the narrower run passes (full `devtools::ch
 
 `check()` is larger; log it the same way and index with `grep -nE '^Status:|checking .* \.\.\. (WARNING|ERROR|NOTE)' check.log`, then `Read` the flagged section. Do not pipe either through `tail`: it truncates from the top and drops the message and the start of each backtrace.
 
-### Commit and push gates
+### Before committing and pushing
 
-- Commit green: `git commit` runs the full `devtools::test()` and blocks on any failure, so reach a green point first. The gate skips automatically when the commit touches no R-relevant file, is a message-only `--amend`, or is empty.
-- Commit with docs in sync: when the commit touches roxygen sources under `R/`, `git commit` also runs the fast `roxygen2::needs_roxygenize()` and blocks if `man/` is out of date, so run `devtools::document()` before committing changed roxygen or `@export`/`@import`. This is checked once at commit time, not on every edit, so editing freely mid-task is fine.
-- Check clean before pushing: `git push` runs `R CMD check` and blocks on any error. Run `devtools::check()` yourself first (a few minutes) rather than hitting it at the gate. The gate skips automatically when the push ships no R-relevant change (docs-only commits, a branch-delete, nothing to push).
-- Retries reuse the last pass: the test-suite and R CMD check gates remember the fingerprint of the exact R-relevant content that last passed (per repo, in `~/.claude/r-dev/gate-cache.json`). If you re-run the same commit or push after fixing something outside the R code (the commit message, a failed `gh pr create`, a retried push), the byte-identical content is not re-checked. Any change to an R file changes the fingerprint, so the gate runs again; a missing or corrupt cache just means the gate runs. The commit cache covers plain `git commit`; `-a` and `--amend` are never cached and always re-run.
-- The wait is labelled: while a gate runs, the progress line names it (e.g. "running R CMD check before push (can take a few minutes; the push waits for it)"), so a slow commit/push is the gate working, not a hang. On success the gate is silent and the commit/push proceeds; on failure it blocks with the failing output.
-- Escape hatch, for genuine need only (e.g. a WIP checkpoint you will fix before it matters): prefix the command with `R_PKG_GATE_SKIP=1` to bypass that one gate, e.g. `R_PKG_GATE_SKIP=1 git commit -m "wip"`. The bypass is printed to stderr; do not use it to paper over a red suite or a failing check.
+- Commit green: reach a green `devtools::test()` before you commit, so red code never enters history. This is your responsibility (no hook enforces it): run the full suite once the change is done and fix any failure before committing.
+- Check clean before pushing: run `devtools::check()` yourself (a few minutes) and fix any error before you push, so a broken package does not leave the machine. This too is by hand, not gated.
+
+Two documentation guardrails do run automatically as `git commit` gates (both fast, both blocking, both silent on success):
+
+- Commit with docs in sync: when the commit touches roxygen sources under `R/`, `git commit` runs the fast `roxygen2::needs_roxygenize()` and blocks if `man/` is out of date, so run `devtools::document()` before committing changed roxygen or `@export`/`@import`. Checked once at commit time, not on every edit, so editing freely mid-task is fine.
+- Commit with the pkgdown index in sync: when the commit touches `_pkgdown.yml`, `NAMESPACE`, or any `R/*.R`, `git commit` runs `pkgdown::check_pkgdown()` and blocks if the reference index is out of sync (a new export missing from the index, or a dangling topic). Fix `_pkgdown.yml` (add the topic, or `@keywords internal` to drop it), re-run `devtools::document()`, then commit. No-op when the package has no `_pkgdown.yml`.
+- Escape hatch, for genuine need only (e.g. a WIP checkpoint you will fix before it matters): prefix the command with `R_PKG_GATE_SKIP=1` to bypass both doc gates for that one commit, e.g. `R_PKG_GATE_SKIP=1 git commit -m "wip"`. The bypass is printed to stderr; do not use it to paper over stale docs.
 
 ## Where to look for information
 
