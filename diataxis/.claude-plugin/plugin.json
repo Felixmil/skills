@@ -1,0 +1,20 @@
+{
+  "name": "diataxis",
+  "description": "Documentation authoring and auditing with Diátaxis, the four-type framework by Daniele Procida (tutorials, how-to guides, reference, explanation). Ships a diataxis skill that forces the reader's need to be named before a word is written, gives per-type writing rules, title conventions and language patterns, a diagnosis pass for documentation that has blurred its types, and a mapping onto R package, pkgdown, Quarto and Sphinx/MkDocs layouts.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Felix Mil"
+  },
+  "license": "MIT",
+  "keywords": [
+    "diataxis",
+    "documentation",
+    "technical-writing",
+    "tutorials",
+    "how-to",
+    "reference",
+    "explanation",
+    "pkgdown",
+    "quarto"
+  ]
+}
