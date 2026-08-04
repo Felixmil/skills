@@ -14,6 +14,20 @@ Diátaxis holds that there are exactly four kinds of documentation, because a pr
 
 Almost every documentation problem you will be handed is one document trying to occupy two quadrants at once: a tutorial padded with rationale, a how-to guide that stops to define its terms, reference material that editorializes, an explanation that breaks into instructions. Each blend fails **both** needs it tried to serve. The reader at work has to wade through teaching to reach the step they came for; the reader at study gets a fragmented lesson with no arc. This is the central insight and the reason the framework is worth following: the four types are not filing categories, they are four incompatible modes of writing.
 
+## Start here: match what you were actually handed
+
+Requests rarely arrive as "which type is this?". They arrive as a symptom. Find the row, then work the step it points at.
+
+| What you were handed | What is actually wrong | Go to |
+| --- | --- | --- |
+| "write docs for X", "document this", "we need a guide" | No type has been chosen yet | Step 1 below |
+| A page feels bloated or rambling, or tries to do everything at once | Type-mixing, two needs in one document | Step 1, then the splitting procedure in `references/auditing.md` |
+| Beginners cannot get started, or competent users cannot finish a task, or nobody can find a fact, or nobody understands why | A whole type is missing from the set, not misplaced | The coverage check in `references/auditing.md` |
+| "Are these titles right?", "does this paragraph belong here?", "how should I organise the reference index?" | Classification and placement, not writing | Step 2, then `references/auditing.md` |
+| "Our docs are a mess, where do I even start?" | Needs the small-step loop, not a rewrite | "Working on documentation that already exists" below |
+
+The fourth row matters more than it looks. Judging a title, deciding where a paragraph belongs, and organising an index are all documentation work even though nothing is being written, and they are exactly the cases where a reasonable-sounding answer from instinct entrenches the wrong structure.
+
 ## Step 1: name the quadrant before writing a word
 
 Do not start drafting and let the type emerge. It will not; it will blur. Answer two questions first, out loud in your response, in one line:
@@ -47,7 +61,7 @@ If you cannot write a title in one of these shapes, the content is not yet one t
 
 ## Step 3: write in that type's mode, and only that mode
 
-Read the reference file for the type before drafting. Each one carries that type's purpose, its writing rules, its characteristic sentence patterns, what it must exclude, and a self-check list:
+Read the reference file for the named type before drafting, not afterwards as a check. The per-type rules are the substance of the framework, and the failure they prevent (a paragraph written in the wrong voice for its page) is invisible once it is on the page and reads perfectly well in isolation. Each file carries that type's purpose, writing rules, characteristic sentence patterns, exclusions, and a self-check list:
 
 - **`references/tutorials.md`** for a lesson: a learning experience for someone acquiring competence.
 - **`references/how-to-guides.md`** for directions: a competent reader with a real-world goal.
@@ -89,6 +103,19 @@ Then repeat. When enough small fixes have accumulated, the material will start d
 For diagnosing existing documentation, splitting a bloated page, and handling content that fits nowhere, read **`references/auditing.md`**.
 
 For where each type physically belongs in an R package, a pkgdown site, or a Quarto/Sphinx/MkDocs project (including what `README.md`, `NEWS.md` and roxygen `@details` are and are not), read **`references/project-layouts.md`**.
+
+## Two traps worth naming
+
+**Balancing instead of separating.** Diátaxis is not a quota. Having noticed the four types, the urge is to produce one of each, or to even them out so no section looks thin. The framework separates needs; it does not require them to be equally served. A tool with one tutorial, eleven how-to guides, exhaustive reference and two explanations may be perfectly proportioned to its readers. Add a document because a reader needs it, never because a quadrant looks empty.
+
+**Structure before content.** Covered above and worth repeating because it is the most common way applying Diátaxis makes documentation worse. Directories named for the four types, containing nothing, are not progress.
+
+## When not to use this
+
+- Copy-editing or tightening prose that is already in the right mode. That is a writing-quality task, and the framework has nothing to say about it.
+- Design documents, RFCs, specifications, proposals, and reports. These are their own genre with their own conventions, and forcing them into the four types distorts them.
+- Documentation build and tooling failures. A broken site build is an engineering problem, not a structural one.
+- Looking up what a documentation tag or directive means.
 
 ## What this framework does not do
 

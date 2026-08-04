@@ -19,11 +19,15 @@ Left alone, an agent asked to "write docs" produces one long page that tries to 
 
 It provides:
 
+- **Symptom-first routing**: requests arrive as "our docs are a mess" or "are these titles right", not as "which type is this", so the skill starts by matching the symptom to the right move.
 - **The compass**, run before drafting: action or cognition, acquisition or application, therefore this type.
 - **Title conventions per type**, the cheapest forcing function available for catching a mis-typed document.
 - **Per-type writing guidance** in `references/`: purpose, principles, characteristic sentence patterns, exclusions, and a self-check list for tutorials, how-to guides, reference, and explanation.
-- **A diagnosis pass** (`references/auditing.md`): where the types blur, the full tutorial-versus-how-to contrast, splitting a page that serves two needs, and handling content that fits nowhere.
+- **A diagnosis pass** (`references/auditing.md`): signals for recognising a type in prose someone else wrote, declared type versus actual type, where the types blur, the full tutorial-versus-how-to contrast, splitting a page that serves two needs, and content that fits nowhere.
+- **A coverage check**: working back from how readers are failing (newcomers bounce off, facts cannot be found, nobody understands why) to the type that is missing entirely, which is a different problem from a page being mis-typed.
 - **Layout mapping** (`references/project-layouts.md`): where each type physically belongs in an R package with pkgdown, a Quarto site, Sphinx/MkDocs, a plain `docs/` directory, or a wiki.
+
+It also names the two ways applying Diátaxis tends to backfire: treating the four types as a quota to balance, and creating the four sections empty before there is anything to put in them.
 
 It also carries the framework's stance on process: work in small complete steps, publish each one, and never create the four sections empty waiting to be filled.
 
