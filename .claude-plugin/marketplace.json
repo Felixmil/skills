@@ -13,6 +13,11 @@
       "name": "dev-crew",
       "source": "./dev-crew",
       "description": "A crew of spec-writer, investigator, planner, builder, and reviewer subagents that drive an issue through spec (or investigate, for bugs) -> plan -> build -> QA, plus skills to refine an issue, run the pipeline, debug a bug, update a branch, create a local issue, address a PR, and merge a PR."
+    },
+    {
+      "name": "diataxis",
+      "source": "./diataxis",
+      "description": "The Diataxis documentation framework as a skill: name the reader's need before drafting, per-type writing rules and title conventions for tutorials, how-to guides, reference and explanation, a diagnosis pass for documentation that has blurred its types or is missing one, and a mapping onto R package, pkgdown, Quarto and Sphinx/MkDocs layouts."
     }
   ]
 }
