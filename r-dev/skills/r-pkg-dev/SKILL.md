@@ -147,10 +147,23 @@ Two documentation guardrails do run automatically as `git commit` gates (both fa
 
 ## Where to look for information
 
-Read the authoritative source before guessing at a package's API or behaviour.
+Read the authoritative source before guessing at a package's API or behavior.
 
-- pkgdown sites usually publish `llms.txt` at the doc-site root: `https://<pkg>.<org>.org/llms.txt` (e.g. `https://testthat.r-lib.org/llms.txt`, `https://dplyr.tidyverse.org/llms.txt`), a compact link index of functions and articles; fetch it to find the right reference page, then fetch that page. A 404 just means fall back to the reference index or local `?fun` / `help()`.
-- For an installed package, local `?fun`, `help(package = "pkg")`, and `vignette(package = "pkg")` are authoritative for the version you have.
+Prefer local help. It describes the version that is installed, which is the version the code will actually run against, while a pkgdown site is built from the development branch and drifts both ways: it advertises functions a CRAN-pinned project cannot call, and it lags behind a locally installed `.9000` build.
+
+- Read a topic with `Rscript -e '?pkg::fun' | col -b`. Without `col -b` the text arrives as backspace-overstrike underlining (`_M_e_d_i_a_n` for "Median"), which is unreadable. `help(package = "pkg")` lists a package's topics, `vignette(package = "pkg")` its installed vignettes.
+- Stop at `args(pkg::fun)` or `formals(pkg::fun)` when a signature is all you need; the full page is far larger and mostly answers questions you did not ask.
+- Find a topic by behavior with `help.search("keyword")`, which matches titles and aliases across installed packages ("rolling mean" finds `zoo::rollmean`). It only sees what is installed.
+
+Reach for the website when local help structurally cannot answer: the package is not installed, or the page is a pkgdown *article*. Articles under `vignettes/articles/` are excluded from the package build by design, so `vignette()` will never list them; ggplot2's `faq-*` pages exist only on the site.
+
+- Resolve the site from `packageDescription("pkg")$URL` instead of guessing. `<pkg>.<org>.org` is a tidyverse and r-lib habit, not a convention: `https://esqlabs.github.io/esqlabsR/` and `https://rstudio.github.io/renv/` are equally normal.
+- Fetch `<site>/llms.txt` only to browse. It indexes every reference page and article and is meant to be read whole (dplyr's is 21KB), so pulling it to reach one known function spends the whole index to use one line of it.
+- Go straight to `<site>/reference/<topic>.md` when the function is known. `<topic>` is the Rd topic, not the function name, because one page routinely documents a whole family: `expect_equal` lives at `equality-expectations.md`. Read the topic off `basename(as.character(help("fun", package = "pkg")))`, and substitute `.md` for `.html` rather than appending it (`reference/mutate.md` resolves, `reference/mutate.html.md` is a 404).
+- Check the HTTP status on every fetch here. A missing page answers 404 with a full HTML error body, so a wrong topic returns plausible-looking bytes rather than an obvious failure, and reading them quietly corrupts everything downstream.
+- Verify against the install before writing code on what you read. The site may document a version you do not have, so confirm a signature with `args()`.
+
+A package with no `llms.txt` and no doc site is normal, not an error; CRAN-only packages have neither. Fall back to local help, or read the source.
 
 ## Lifecycle and versioning
 
