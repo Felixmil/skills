@@ -149,7 +149,7 @@ Two documentation guardrails do run automatically as `git commit` gates (both fa
 
 Read the authoritative source before guessing at a package's API or behavior.
 
-Prefer local help. It describes the version that is installed, which is the version the code will actually run against, while a pkgdown site is built from the development branch and drifts both ways: it advertises functions a CRAN-pinned project cannot call, and it lags behind a locally installed `.9000` build.
+Prefer local help. It describes the version that is installed, which is the version the code will actually run against. A pkgdown site publishes two versions side by side: the root documents the last release, and `/dev/` documents the development branch (`https://ggplot2.tidyverse.org/` is 4.0.3, `https://ggplot2.tidyverse.org/dev/` is 4.0.3.9000). Neither is guaranteed to be yours, so the site says what some version does while local help says what your version does.
 
 - Read a topic with `Rscript -e '?pkg::fun' | col -b`. Without `col -b` the text arrives as backspace-overstrike underlining (`_M_e_d_i_a_n` for "Median"), which is unreadable. `help(package = "pkg")` lists a package's topics, `vignette(package = "pkg")` its installed vignettes.
 - Stop at `args(pkg::fun)` or `formals(pkg::fun)` when a signature is all you need; the full page is far larger and mostly answers questions you did not ask.
@@ -157,9 +157,10 @@ Prefer local help. It describes the version that is installed, which is the vers
 
 Reach for the website when local help structurally cannot answer: the package is not installed, or the page is a pkgdown *article*. Articles under `vignettes/articles/` are excluded from the package build by design, so `vignette()` will never list them; ggplot2's `faq-*` pages exist only on the site.
 
+- Pick the branch that matches the install before reading anything. A fourth version component (`packageVersion("pkg")` returns `4.0.3.9000`) means a development build, so read under `<site>/dev/`; a three-part version means the root. Treat the match as approximate rather than exact: esqlabsR serves 5.7.0 at its root and 5.7.0.9013 under `/dev/`, and a local build can be neither.
 - Resolve the site from `packageDescription("pkg")$URL` instead of guessing. `<pkg>.<org>.org` is a tidyverse and r-lib habit, not a convention: `https://esqlabs.github.io/esqlabsR/` and `https://rstudio.github.io/renv/` are equally normal.
 - Fetch `<site>/llms.txt` only to browse. It indexes every reference page and article and is meant to be read whole (dplyr's is 21KB), so pulling it to reach one known function spends the whole index to use one line of it.
-- Go straight to `<site>/reference/<topic>.md` when the function is known. `<topic>` is the Rd topic, not the function name, because one page routinely documents a whole family: `expect_equal` lives at `equality-expectations.md`. Read the topic off `basename(as.character(help("fun", package = "pkg")))`, and substitute `.md` for `.html` rather than appending it (`reference/mutate.md` resolves, `reference/mutate.html.md` is a 404).
+- Go straight to `<site>/reference/<topic>.md`, or `<site>/dev/reference/<topic>.md`, when the function is known. `<topic>` is the Rd topic, not the function name, because one page routinely documents a whole family: `expect_equal` lives at `equality-expectations.md`. Read the topic off `basename(as.character(help("fun", package = "pkg")))`, and substitute `.md` for `.html` rather than appending it (`reference/mutate.md` resolves, `reference/mutate.html.md` is a 404).
 - Check the HTTP status on every fetch here. A missing page answers 404 with a full HTML error body, so a wrong topic returns plausible-looking bytes rather than an obvious failure, and reading them quietly corrupts everything downstream.
 - Verify against the install before writing code on what you read. The site may document a version you do not have, so confirm a signature with `args()`.
 
