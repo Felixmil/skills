@@ -147,10 +147,12 @@ Two documentation guardrails do run automatically as `git commit` gates (both fa
 
 ## Where to look for information
 
-Read the authoritative source before guessing at a package's API or behaviour.
+Read the authoritative source before guessing at a package's API or behavior.
 
-- pkgdown sites usually publish `llms.txt` at the doc-site root: `https://<pkg>.<org>.org/llms.txt` (e.g. `https://testthat.r-lib.org/llms.txt`, `https://dplyr.tidyverse.org/llms.txt`), a compact link index of functions and articles; fetch it to find the right reference page, then fetch that page. A 404 just means fall back to the reference index or local `?fun` / `help()`.
-- For an installed package, local `?fun`, `help(package = "pkg")`, and `vignette(package = "pkg")` are authoritative for the version you have.
+- Start local: `Rscript -e '?pkg::fun' | col -b` (without `col -b` the output is backspace-overstrike underlining and unreadable), plus `help(package = "pkg")`, `args()`, `help.search("keyword")`. These describe the installed version, which is the one the code will run against.
+- A reference page answers what one function takes and returns. Switch to a vignette when the question is wider than that: how several functions compose, how the package is meant to be used end to end, or why a call that matches its signature still behaves unexpectedly. Reference pages do not carry those answers, so more `?fun` will not find them. List with `vignette(package = "pkg")`, then read the source directly: `Rscript -e 'v <- vignette("name", package = "pkg"); cat(file.path(v$Dir, "doc", v$File))'` prints a path to an `.Rmd`.
+- Reach for the pkgdown site when the package is not installed, or when no installed vignette covers the topic (some are published only on the site). Find it with `packageDescription("pkg")$URL`; its root documents the last release and `/dev/` the development branch, so pick the one matching `packageVersion("pkg")`. `<site>/llms.txt` indexes every page.
+- Fetch `<site>/reference/<topic>.md` directly when the function is known. `<topic>` is the Rd topic, not the function name, since one page covers a family (`expect_equal` is at `equality-expectations.md`); read it off `basename(as.character(help("fun", package = "pkg")))`. Substitute `.md` for `.html` rather than appending it. A wrong topic answers 404 with a full HTML body, so it reads as content rather than as an error.
 
 ## Lifecycle and versioning
 
